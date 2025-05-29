@@ -5,4 +5,8 @@
 /node_modules/
 
 # Environment variables
-/env.ts
+.env
+
+.DS_Store
+
+/src/generated/prisma
