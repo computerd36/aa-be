@@ -1,14 +1,17 @@
+import { PushSaferSchema } from "~/routes/webhook";
 import { prismaClient } from "../../prisma/prismaClient";
 import { parseDeviceName } from "../utils/devicename";
+import z from "zod";
 
-interface AddDevicePayload {
+interface PushSaferSchema {
+  action: "add-device" | "delete-device";
   id: string;
   name: string;
-  group?: string;
-  guest?: string;
+  group: string;
+  guest: string;
 }
 
-export async function upsertDevice(p: AddDevicePayload) {
+export async function upsertDevice(p: z.infer<typeof PushSaferSchema>) {
   const deviceId = Number(p.id);
   const parsed = parseDeviceName(p.name); // { language, alertLevel } | null
 

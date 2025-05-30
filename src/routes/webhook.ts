@@ -4,12 +4,12 @@ import { upsertDevice } from "../services/deviceService";
 
 const webhookRouter = Router();
 
-const PushSaferSchema = z.object({
+export const PushSaferSchema = z.object({
   action: z.enum(["add-device", "delete-device"]),
   id: z.string().regex(/^\d+$/),
   name: z.string(),
-  group: z.string().optional(),
-  guest: z.string().optional(),
+  group: z.string(),
+  guest: z.string(),
 });
 
 webhookRouter.post("/pushsafer", async (req, res) => {
