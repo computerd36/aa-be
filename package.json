@@ -13,7 +13,7 @@
 		"dev:build": "esbuild dev.ts ./src --bundle --outdir=dist --packages=external --platform=node --sourcemap --watch",
 		"dev:run": "node --inspect -r ./dist/dev.js --watch dist/src",
 		"build": "esbuild index=./src --bundle --minify --outdir=dist --packages=external --platform=node",
-		"start": "prisma migrate deploy && node dist"
+    	"start": "prisma migrate deploy && prisma generate && node dist/index.js"
 	},
 	"dependencies": {
 		"@prisma/client": "^6.8.2",
