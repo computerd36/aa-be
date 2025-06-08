@@ -34,6 +34,8 @@ webhookRouter.post("/pushsafer", async (req: Request, res: Response) => {
   try {
     const body = req.body;
 
+    console.log("Received webhook payload:", JSON.stringify(body, null, 2));
+
     // Handle device actions
     const deviceActionResult = DeviceActionSchema.safeParse(body);
     if (deviceActionResult.success) {
