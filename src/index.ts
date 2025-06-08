@@ -9,6 +9,8 @@ import webhookRouter from "./routes/webhook";
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.json());
+
 async function main() {
   app.get("/", (req, res) => {
     res.send("AlertAigües API is running!");
