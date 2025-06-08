@@ -19,7 +19,7 @@ muteRouter.post(
 
     await muteDevice(deviceId, duration);
 
-    res.json({ ok: true, mutedFor: "3h" });
+    res.json({ ok: true, mutedFor: `${duration} hours` });
   }
 );
 

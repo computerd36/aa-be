@@ -1,36 +1,36 @@
-import { PushSaferSchema } from "~/routes/webhook";
 import { prismaClient } from "../../prisma/prismaClient";
 import { parseDeviceName } from "../utils/devicename";
-import z from "zod";
 
-interface PushSaferSchema {
-  action: "add-device" | "delete-device";
+export async function createUser(deviceData: {
   id: string;
-  name: string;
-  group: string;
-  guest: string;
-}
+  name?: string;
+  group?: string;
+  guest?: string;
+}) {
+  const deviceId = Number(deviceData.id);
+  const deviceName = deviceData.name || `Device ${deviceId}`;
+  const parsed = parseDeviceName(deviceName);
 
-export async function upsertDevice(p: z.infer<typeof PushSaferSchema>) {
-  const deviceId = Number(p.id);
-  const parsed = parseDeviceName(p.name); // { language, alertLevel } | null
-
-  await prismaClient.user.upsert({
-    where: { deviceId },
-    update: {
-      name: p.name,
-      role: p.group === "dev" ? "dev" : "user",
-      ...(parsed && {
-        language: parsed.language,
-        value: parsed.value,
-      }),
-    },
-    create: {
+  const user = await prismaClient.user.create({
+    data: {
       deviceId,
-      name: p.name,
-      role: p.group === "dev" ? "dev" : "user",
+      name: parsed?.name || deviceName,
+      role: deviceData.group === "dev" ? "dev" : "user",
       language: parsed?.language ?? "en",
       value: parsed?.value ?? 1.5,
     },
   });
+
+  console.log(`User created: ${user.name} (Device ID: ${deviceId})`);
+  return user;
+}
+
+export async function deleteUser(deviceId: string): Promise<void> {
+  const numericDeviceId = Number(deviceId);
+
+  await prismaClient.user.delete({
+    where: { deviceId: numericDeviceId },
+  });
+
+  console.log(`User with device ID ${numericDeviceId} deleted successfully.`);
 }
