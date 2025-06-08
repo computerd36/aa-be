@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { createUser, deleteUser } from "../services/deviceService";
+import { createUser, deleteUser } from "../services/userService";
 
 export const webhookRouter = Router();
 
