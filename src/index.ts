@@ -16,7 +16,6 @@ async function main() {
     res.send("AlertAigües API is running!");
   });
 
-  app.use("/mute", muteRouter);
   app.use("/webhook", webhookRouter);
 
   app.listen(port, () => {
