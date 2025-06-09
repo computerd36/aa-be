@@ -3,7 +3,6 @@ import "./jobs/waterDataCron";
 import express from "express";
 
 //router
-import muteRouter from "./routes/mute";
 import webhookRouter from "./routes/webhook";
 
 const app = express();
