@@ -32,6 +32,11 @@ export const PushSaferSchema = z.union([
 
 webhookRouter.post("/pushsafer", async (req: Request, res: Response) => {
   try {
+    // debug
+    console.log("Raw req.body:", req.body);
+    console.log("req.body.json:", req.body.json);
+    console.log("Content-Type:", req.headers["content-type"]);
+
     const body = req.body;
 
     console.log("Received webhook payload:", JSON.stringify(body, null, 2));
