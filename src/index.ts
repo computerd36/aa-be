@@ -4,6 +4,7 @@ import express from "express";
 
 //router
 import webhookRouter from "./routes/webhook";
+import statusRouter from "./routes/status";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ async function main() {
   });
 
   app.use("/webhook", webhookRouter);
+  app.use("/status", statusRouter);
 
   app.listen(port, () => {
     console.log(`Server listening on port ${port}`);

@@ -3,7 +3,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { createUser, deleteUser } from "../services/userService";
 
-export const webhookRouter = Router();
+const webhookRouter = Router();
 
 // Configure multer to handle multipart/form-data
 const upload = multer();
