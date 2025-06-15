@@ -7,8 +7,14 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(["development", "production"]).default("development"),
 
-  // AA API
-  ALERTAIGUA_API_BASE_URL: z.string().url(),
+  // CORS_ORIGINS: "http://localhost:5173,https://aa-fe-dev.up.railway.app"
+  CORS_ORIGINS: z
+    .string()
+    .transform((str) => str.split(",").map((url) => url.trim()))
+    .pipe(
+      z.array(z.string().url()).min(1, "At least one CORS origin is required")
+    )
+    .default("http://localhost:3000"),
 
   // SAIHEBRO API
   SAIHEBRO_API_BASE_URL: z.string().url(),
@@ -16,7 +22,7 @@ const EnvSchema = z.object({
   SAIHEBRO_API_KEY: z.string().min(1, "SAIHEBRO_API_KEY is required"),
 
   // POSTGRESQL DB
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().url(),
 });
 
 export const env = EnvSchema.parse(process.env);
