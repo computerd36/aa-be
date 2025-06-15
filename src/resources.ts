@@ -8,3 +8,11 @@ export type PushsaferNameObject = {
   metric: "level" | "flowrate";
   value: number;
 };
+
+type StatusType = "ok" | "warning" | "error";
+
+export type AlertAiguaStatus = {
+  aa_status: StatusType;
+  pushsafer_status: StatusType;
+  saihebro_status: StatusType;
+};

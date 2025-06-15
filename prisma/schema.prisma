@@ -11,14 +11,13 @@ model User {
   id           String   @id @default(uuid())
 
   deviceId     Int      @unique            // Pushsafer ID
-  name         String
-  language     String   @default("en")
-  metric       String   @default("level")
-  value       Float
+  name         String                      // stores the users first name
+  language     String   @default("en")     // users language: en, es or ca
+  metric       String   @default("level")  // level or flowrate 
+  value        Decimal  @db.Decimal(5,2)   // the alert value
   role         String   @default("user")   // user | dev
 
   lastWarnedAt DateTime?                   // 3-h cooldown
-  mutedUntil   DateTime?                   // null = not muted
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

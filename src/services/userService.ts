@@ -20,8 +20,8 @@ export async function createUser(deviceData: {
       deviceId,
       name: parsed.name,
       role: deviceData.group === "dev" ? "dev" : "user",
-      language: parsed.language ?? "en",
-      value: parsed?.value ?? 1.5,
+      language: parsed.language,
+      value: parsed.value,
     },
   });
 

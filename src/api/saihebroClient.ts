@@ -4,10 +4,9 @@ import { env } from "../env";
 
 // envs
 const baseURL = env.SAIHEBRO_API_BASE_URL;
-const apiPath = env.SAIHEBRO_API_PATH;
 const apikey = env.SAIHEBRO_API_KEY;
 
-if (!baseURL || !apikey || !apiPath) {
+if (!baseURL || !apikey) {
   throw new Error(
     "Missing required SAIHEBRO API configuration in environment variables."
   );
@@ -17,7 +16,7 @@ if (!baseURL || !apikey || !apiPath) {
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const saihebroClient = axios.create({
-  baseURL: `${baseURL}${apiPath}`,
+  baseURL: baseURL,
   params: {
     apikey: apikey,
   },
