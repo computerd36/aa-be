@@ -74,6 +74,16 @@ webhookRouter.post(
         const data = deviceActionResult.data;
 
         if (data.action === "add-device") {
+          // check if user already exists, if so delete old one
+          try {
+            await deleteUser(data.id);
+            console.log(`Existing user with ID ${data.id} deleted`);
+          } catch (error) {
+            console.log(
+              `No existing user found with ID ${data.id}, proceeding with creation`
+            );
+          }
+
           await createUser({
             id: data.id,
             name: data.name,

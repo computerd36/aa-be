@@ -4,16 +4,7 @@ import { fetchWaterData } from "./fetchWaterDataJob";
 import { appState, SaihEbroSensorData } from "../state/appState";
 
 /**
- * Calls the
- *
- * @remarks
- * This method is part of the {@link core-library#Statistics | Statistics subsystem}.
- *
- * @param x - The first input number
- * @param y - The second input number
- * @returns The arithmetic mean of `x` and `y`
- *
- * @beta
+ * Calls the `fetchWaterData` function to retrieve water data from the SAIH Ebro API
  */
 async function updateWaterData() {
   try {
@@ -44,8 +35,6 @@ async function updateWaterData() {
   } catch (error) {
     console.error("Error fetching water data:", error);
   }
-
-  
 }
 
 // Run the update immediately on startup
