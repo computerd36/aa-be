@@ -23,6 +23,14 @@ const EnvSchema = z.object({
 
   // POSTGRESQL DB
   DATABASE_URL: z.string().url(),
+
+  // PUSHSAFER
+  PUSHSAFER_PRIVATE_KEY: z
+    .string()
+    .regex(
+      /^[a-zA-Z0-9]{20}$/,
+      "PUSHSAFER_PRIVATE_KEY must be exactly 20 alphanumeric characters"
+    ),
 });
 
 export const env = EnvSchema.parse(process.env);

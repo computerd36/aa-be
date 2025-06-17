@@ -27,7 +27,8 @@
 		"express-rate-limit": "^7.5.0",
 		"multer": "^2.0.1",
 		"node-cron": "^3.0.3",
-		"pg": "^8.16.0"
+		"pg": "^8.16.0",
+		"pushsafer-notifications": "^0.2.0"
 	},
 	"devDependencies": {
 		"@types/cors": "^2.8.19",

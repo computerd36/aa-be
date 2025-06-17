@@ -41,6 +41,9 @@ dependencies:
   pg:
     specifier: ^8.16.0
     version: 8.16.0
+  pushsafer-notifications:
+    specifier: ^0.2.0
+    version: 0.2.0
 
 devDependencies:
   '@types/cors':
@@ -1756,6 +1759,10 @@ packages:
 
   /proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+    dev: false
+
+  /pushsafer-notifications@0.2.0:
+    resolution: {integrity: sha512-RMoaX+/xSun7SaRqchFfqsi2xVuvYUIre4uyyXsk24wi9xCkdkiXwDpPi2kLZXqG2n7K86qDceDjEOsGV0LX4w==}
     dev: false
 
   /qs@6.13.0:
