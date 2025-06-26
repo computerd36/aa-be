@@ -21,38 +21,36 @@ interface AlertCheckResult {
   metric: "level" | "flowrate";
 }
 
-export class AlertService {
-  // checks all users for alert conditions based on the provided level and flowrate
-  static async checkAllUserAlerts(
-    level: number,
-    flowrate: number
-  ): Promise<AlertCheckResult[]> {
-    const users = await prismaClient.user.findMany(); // all users
-    const results: AlertCheckResult[] = []; // array to store results (users where alertState have to be changed)
+// checks all users for alert conditions based on the provided level and flowrate
+export async function checkAllUserAlerts(
+  level: number,
+  flowrate: number
+): Promise<AlertCheckResult[]> {
+  const users = await prismaClient.user.findMany(); // all users
+  const results: AlertCheckResult[] = []; // array to store results (users where alertState have to be changed)
 
-    // iterate thru all users
-    for (const user of users) {
-      const currentValue = user.metric === "level" ? level : flowrate;
-      const result = await this.checkUserAlert(user, currentValue);
+  // iterate thru all users
+  for (const user of users) {
+    const currentValue = user.metric === "level" ? level : flowrate;
+    const result = await this.checkUserAlert(user, currentValue);
 
-      if (result) {
-        results.push(result);
-      }
+    if (result) {
+      results.push(result);
     }
-
-    return results;
   }
 
-  // TODO: has to check individal users if alert conditions are met, if so return AlertCheckResult if not return null
-  static async checkUserAlert(
-    user: User,
-    currentValue: number
-  ): Promise<AlertCheckResult | null> {
-    return null;
-  }
-
-  // TODO: process the results of the alert checks and send notifications via notificationService if needed
-  static async proccessAlertResults(
-    results: AlertCheckResult[]
-  ): Promise<void> {}
+  return results;
 }
+
+// TODO: has to check individal users if alert conditions are met, if so return AlertCheckResult if not return null
+export async function checkUserAlert(
+  user: User,
+  currentValue: number
+): Promise<AlertCheckResult | null> {
+  return null;
+}
+
+// TODO: process the results of the alert checks and send notifications via notificationService if needed
+export async function proccessAlertResults(
+  results: AlertCheckResult[]
+): Promise<void> {}
