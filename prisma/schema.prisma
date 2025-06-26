@@ -16,19 +16,19 @@ enum AlarmState {
 
 // ---- Models ------
 model User {
-  id                  String            @id @default(uuid())
-
-  deviceId            Int               @unique               // Pushsafer ID
-  name                String                                  // stores the users first name
-  language            String            @default("en")        // users language: en, es or ca
-  metric              String            @default("level")     // level or flowrate 
-  value               Decimal           @db.Decimal(5,2)      // the alert value
-  role                String            @default("user")      // user | dev
-
-  alarmState          AlarmState        @default(clearAlarm)  // alarmstate (see enum), tells in which alarmState the user curently is
-  lastWarnedAt        DateTime?                               
-
-
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  id                     String     @id @default(uuid())
+  // USER SETTINGS
+  deviceId               Int        @unique // Pushsafer ID
+  name                   String // stores the users first name
+  language               String     @default("en") // users language: en, es or ca
+  metric                 String     @default("level") // level or flowrate 
+  value                  Decimal    @db.Decimal(5, 2) // the alert value
+  role                   String     @default("user") // user | dev
+  // ALERT STATE TRACKING
+  alarmState             AlarmState @default(clearAlarm) // alarmstate (see enum), tells in which alarmState the user curently is
+  lastWarnedAt           DateTime?
+  consecutiveNormalCount Int?       @default(0) // how many times the user has been warned consecutively
+  // TIMESTAMPS
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 }
