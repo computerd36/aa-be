@@ -1,3 +1,4 @@
+import { getMessage } from "~/constants/messages";
 import { prismaClient } from "../../prisma/prismaClient";
 import { parseDeviceName } from "../utils/devicename";
 import { sendNotification } from "./notificationService";
@@ -20,9 +21,9 @@ export async function createUser(deviceData: {
     data: {
       deviceId,
       name: parsed.name,
-      role: deviceData.group === "dev" ? "dev" : "user",
       language: parsed.language,
       value: parsed.value,
+      role: deviceData.group === "dev" ? "dev" : "user",
     },
   });
 
@@ -30,9 +31,17 @@ export async function createUser(deviceData: {
 
   // send test notification to the user
 
+  const welcomeMessage = getMessage(user.language, "welcome");
+
   sendNotification(
-    "Welcome to AlertAigua!",
-    `Hello ${user.name}, your device has been successfully registered with AlertAigua with the following details:\n\nDevice ID: ${user.deviceId}\nRole: ${user.role}\nLanguage: ${user.language}\nValue: ${user.value}`,
+    welcomeMessage.title,
+    welcomeMessage.body(
+      user.name,
+      user.deviceId,
+      user.language,
+      user.value.toString(),
+      user.metric as "level" | "flowrate"
+    ),
     user.deviceId.toString(),
     false
   );

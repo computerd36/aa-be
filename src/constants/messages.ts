@@ -111,8 +111,10 @@ const messages: Record<string, MessageTemplates> = {
   ca: {
     welcome: {
       title: "Benvingut a AlertAigua!",
-      body: (name, deviceId, role, language, value) =>
-        `Hola ${name}, el teu dispositiu ha estat registrat amb èxit a AlertAigua amb els següents detalls: ID del dispositiu: ${deviceId}, Rol: ${role}, Idioma: ${language}, Valor: ${value}`,
+      body: (name, deviceId, language, value, metric) =>
+        `Hola ${name}, el teu dispositiu s'ha registrat correctament a AlertAigua i se't notificarà si la ${metric} supera ${value} ${
+          metric === "level" ? "m" : "m³/s"
+        }. L'ID del teu dispositiu és ${deviceId} i el teu idioma preferit està configurat a ${language}.`,
     },
     serviceUnavailable: {
       title: "Servei temporalment no disponible",
@@ -146,11 +148,11 @@ const messages: Record<string, MessageTemplates> = {
   },
 };
 
-export function getMessage(
+export function getMessage<T extends keyof MessageTemplates>(
   language: string,
-  messageType: keyof MessageTemplates
-): MessageTemplates[keyof MessageTemplates] {
-  const lang = messages[language] || messages["en"]; // fallback engliush
+  messageType: T
+): MessageTemplates[T] {
+  const lang = messages[language] || messages["en"]; // fallback english
   return lang[messageType];
 }
 
