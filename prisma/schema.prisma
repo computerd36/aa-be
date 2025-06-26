@@ -7,17 +7,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ---- Enums ------
+enum AlarmState {
+  clearAlarm
+  initialAlarm
+  escalationAlarm
+}
+
+// ---- Models ------
 model User {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
 
-  deviceId     Int      @unique            // Pushsafer ID
-  name         String                      // stores the users first name
-  language     String   @default("en")     // users language: en, es or ca
-  metric       String   @default("level")  // level or flowrate 
-  value        Decimal  @db.Decimal(5,2)   // the alert value
-  role         String   @default("user")   // user | dev
+  deviceId     Int        @unique               // Pushsafer ID
+  name         String                           // stores the users first name
+  language     String     @default("en")        // users language: en, es or ca
+  metric       String     @default("level")     // level or flowrate 
+  value        Decimal    @db.Decimal(5,2)      // the alert value
+  role         String     @default("user")      // user | dev
 
-  lastWarnedAt DateTime?                   // 3-h cooldown
+  alarmState   AlarmState @default(clearAlarm)  // alarmstate (see enum), tells in which alarmState the user curently is
+  lastWarnedAt DateTime?                        
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
