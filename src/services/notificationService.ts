@@ -10,16 +10,16 @@ export function sendNotification(
   title: string,
   message: string,
   device: string,
-  critical: boolean = false,
+  isCritical: boolean = false,
   url?: string,
   urlTitle?: string
 ) {
   let msg = {
     t: title,
     m: message,
-    s: critical ? 2 : 1, // 2 is critical alert, 1 is normal
-    v: critical ? 3 : 1, // 2 is strong vibration, 1 is normal vibration
-    // i: critical ? "CRITICAL ICON URL HERE" : "NORMAL ICON URL HERE", // TODO: create icons, serve to cloudinary and add ulrs here
+    s: isCritical ? 62 : 12,
+    v: isCritical ? 3 : 1,
+    i: isCritical ? 74 : 4,
     d: device,
     u: url,
     ut: urlTitle,
