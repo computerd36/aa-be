@@ -9,7 +9,7 @@ generator client {
 
 // ---- Enums ------
 enum AlarmState {
-  clearAlarm
+  normal
   initialAlarm
   escalationAlarm
 }
@@ -25,7 +25,7 @@ model User {
   value                  Decimal    @db.Decimal(5, 2) // the alert value
   role                   String     @default("user") // user | dev
   // ALERT STATE TRACKING
-  alarmState             AlarmState @default(clearAlarm) // alarmstate (see enum), tells in which alarmState the user curently is
+  alarmState             AlarmState @default(normal) // alarmstate (see enum), tells in which alarmState the user curently is
   lastWarnedAt           DateTime?
   consecutiveNormalCount Int?       @default(0) // how many times the user has been warned consecutively
   // TIMESTAMPS

@@ -2,6 +2,7 @@
 import cron from "node-cron";
 import { fetchWaterData } from "./fetchWaterDataJob";
 import { appState, SaihEbroSensorData } from "../state/appState";
+import { parseLocalDateTime } from "~/utils/time";
 
 /**
  * Calls the `fetchWaterData` function to retrieve water data from the SAIH Ebro API
@@ -25,8 +26,8 @@ async function updateWaterData() {
       appState.currentWaterData = {
         waterLevel: waterLevelData.valor,
         flowRate: flowRateData.valor,
-        timestamp: waterLevelData.fecha,
-        lastUpdated: new Date(),
+        lastUpdated: parseLocalDateTime(waterLevelData.fecha),
+        lastFetched: new Date(),
       };
       console.log("Updated appState:", appState.currentWaterData);
     } else {

@@ -17,15 +17,15 @@ export interface MessageTemplates {
     title: string;
     body: string;
   };
-  initialAlert: {
+  initialAlarm: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
   };
-  escalationAlert: {
+  escalationAlarm: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
   };
-  clearAlert: {
+  normal: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
   };
@@ -48,21 +48,21 @@ const messages: Record<string, MessageTemplates> = {
       title: "Service Restored",
       body: "AlertAigua service has been restored and is now monitoring your water system normally.",
     },
-    initialAlert: {
+    initialAlarm: {
       title: "FLOOD WARNING! - IMMEDIATE ACTION REQUIRED",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `Critical water flow rate detected! Current flow rate: ${currentValue}. Please check your water system immediately.`
           : `Critical water level detected! Current level: ${currentValue}. Please check your water system immediately.`,
     },
-    escalationAlert: {
+    escalationAlarm: {
       title: "FLOOD WARNING! - IMMEDIATE ACTION REQUIRED",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `Critical water flow rate detected! Current flow rate: ${currentValue}. Please check your water system immediately.`
           : `Critical water level detected! Current level: ${currentValue}. Please check your water system immediately.`,
     },
-    clearAlert: {
+    normal: {
       title: "FLOOD WARNING CLEARED",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
@@ -86,21 +86,21 @@ const messages: Record<string, MessageTemplates> = {
       title: "Servicio restaurado",
       body: "El servicio AlertAigua ha sido restaurado y ahora está monitoreando tu sistema de agua normalmente.",
     },
-    initialAlert: {
+    initialAlarm: {
       title: "¡ALERTA DE INUNDACIÓN! - SE REQUIERE ACCIÓN INMEDIATA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `¡Se ha detectado un flujo de agua crítico! Flujo actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`
           : `¡Se ha detectado un nivel de agua crítico! Nivel actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`,
     },
-    escalationAlert: {
+    escalationAlarm: {
       title: "¡ALERTA DE INUNDACIÓN! - SE REQUIERE ACCIÓN INMEDIATA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `¡Se ha detectado un flujo de agua crítico! Flujo actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`
           : `¡Se ha detectado un nivel de agua crítico! Nivel actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`,
     },
-    clearAlert: {
+    normal: {
       title: "ALERTA DE INUNDACIÓN DESACTIVADA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
@@ -124,21 +124,21 @@ const messages: Record<string, MessageTemplates> = {
       title: "Servei restaurat",
       body: "El servei AlertAigua ha estat restaurat i ara està monitoritzant el teu sistema d'aigua normalment.",
     },
-    initialAlert: {
+    initialAlarm: {
       title: "ALERTA D'INUNDACIÓ! - ACCIÓ IMMEDIATA REQUERIDA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `S'ha detectat un flux d'aigua crític! Flux actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`
           : `S'ha detectat un nivell d'aigua crític! Nivell actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`,
     },
-    escalationAlert: {
+    escalationAlarm: {
       title: "ALERTA D'INUNDACIÓ! - ACCIÓ IMMEDIATA REQUERIDA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"
           ? `S'ha detectat un flux d'aigua crític! Flux actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`
           : `S'ha detectat un nivell d'aigua crític! Nivell actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`,
     },
-    clearAlert: {
+    normal: {
       title: "ALERTA D'INUNDACIÓ DESACTIVADA",
       body: (alertType, currentValue) =>
         alertType === "flowrate"

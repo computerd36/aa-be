@@ -14,12 +14,11 @@ export interface SaihEbroSensorData {
  * Represents how we save the Waterdata for our usage, stripped and translated
  */
 export interface WaterData {
-  waterLevel?: number; // Waterlevel in m
-  flowRate?: number; // Flowrate in m^3/s
-  timestamp?: string; // Timestamp of the sensor data itself in "YYYY-MM-DD HH:MM:SS"
-  lastUpdated?: Date; // Date object that is created on every fetch
+  waterLevel: number; // Waterlevel in m
+  flowRate: number; // Flowrate in m^3/s
+  lastFetched: Date; // Date object that tells when the data was captured initially in the sensor
+  lastUpdated: Date; // Date object that tells when the data was last updated from the API
 }
-
 export interface User {
   chatId: string;
   name: string;
@@ -28,13 +27,11 @@ export interface User {
 }
 
 interface AppState {
-  currentWaterData: WaterData;
-  users: User[];
+  currentWaterData: WaterData | null;
   errorCount: number;
 }
 
 export const appState: AppState = {
-  currentWaterData: {},
-  users: [],
+  currentWaterData: null,
   errorCount: 0,
 };
