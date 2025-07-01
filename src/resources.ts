@@ -12,7 +12,11 @@ export type PushsaferNameObject = {
 type StatusType = "ok" | "warning" | "error";
 
 export type AlertAiguaStatus = {
-  aa_status: StatusType;
-  pushsafer_status: StatusType;
-  saihebro_status: StatusType;
+  alertaigua: StatusType;
+  pushsafer: {
+    api: StatusType;
+    iosApp: StatusType;
+    androidApp: StatusType;
+  };
+  saihebro: StatusType;
 };
