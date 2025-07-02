@@ -3,6 +3,7 @@ import cron from "node-cron";
 import { fetchWaterData } from "./fetchWaterDataJob";
 import { appState, SaihEbroSensorData } from "../state/appState";
 import { parseLocalDateTime } from "~/utils/time";
+import { SENSORS } from "~/constants/constants";
 
 /**
  * Calls the `fetchWaterData` function to retrieve water data from the SAIH Ebro API
@@ -10,8 +11,15 @@ import { parseLocalDateTime } from "~/utils/time";
 async function updateWaterData() {
   try {
     console.log("Fetching water data...");
-    const senales = "A153C01NRIO1,A153C65QRIO1";
-    const waterData = await fetchWaterData(senales);
+
+    // use the first sensor with metric: "level" and the first sensor with metric: "flowrate" as senales in the array
+    const senales = SENSORS.filter(
+      (sensor) => sensor.metric === "level" || sensor.metric === "flowrate"
+    )
+      .map((sensor) => sensor.id)
+      .slice(0, 2);
+
+    const waterData = await fetchWaterData(senales.join(","));
 
     // Assuming waterData is an array of measurements,
     // map them to water level and flow rate.
