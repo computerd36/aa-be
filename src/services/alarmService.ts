@@ -21,7 +21,16 @@ interface AlertCheckResult {
   metric: "level" | "flowrate";
 }
 
-// checks all users for alert conditions based on the provided level and flowrate
+/**
+ * Checks all db users' alerts based on the provided level and flowrate.
+ *
+ * @param {number} level - The current water level.
+ * @param {number} flowrate - The current water flow rate.
+ *
+ * @returns {Promise<AlertCheckResult[]>} - A promise that resolves to an array of AlertCheckResult objects,
+ * where each object contains the user ID, previous state, new state, current value,
+ * thresshold, and metric type for users whose alert state needs to be changed.
+ */
 export async function checkAllUserAlerts(
   level: number,
   flowrate: number

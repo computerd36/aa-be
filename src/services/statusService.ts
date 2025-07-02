@@ -1,22 +1,42 @@
 import axios from "axios";
-import { AlertAiguaStatus } from "../resources";
+import { AlertAiguaStatus, StatusType } from "../resources";
 import { appState } from "~/state/appState";
+import { PUSHSAFER_STATUS_FRESH_FOR } from "~/constants/constants";
 
+/**
+ * Gets the current status of the AlertAigua system, including the status of
+ * AlertAigua, Pushsafer, and SAIH Ebro.
+ *
+ * @returns {Promise<AlertAiguaStatus>} A promise that resolves to the current status of the AlertAigua system.
+ */
 export async function getStatus(): Promise<AlertAiguaStatus> {
-  let status: AlertAiguaStatus;
+  let status: AlertAiguaStatus = {
+    alertaigua: "error",
+    pushsafer: {
+      api: "error",
+      iosApp: "error",
+      androidApp: "error",
+    },
+    saihebro: "error",
+  };
 
-  status.aa_status = getAAStatus();
-  status.pushsafer_status = await getPushsaferStatus();
-  status.saihebro_status = getSaihEbroStatus();
+  status.alertaigua = getAAStatus();
+  status.pushsafer = await getPushsaferStatus();
+  status.saihebro = getSaihEbroStatus();
 
   return {
-    aa_status: status.aa_status,
-    pushsafer_status: status.pushsafer_status,
-    saihebro_status: "ok",
+    alertaigua: status.alertaigua,
+    pushsafer: {
+      api: status.pushsafer.api,
+      iosApp: status.pushsafer.iosApp,
+      androidApp: status.pushsafer.androidApp,
+    },
+    saihebro: status.saihebro,
   };
 }
 
-export function getAAStatus(): "ok" | "error" {
+function getAAStatus(): StatusType {
+  // TODO: add "warning" StatusType
   if (
     appState &&
     appState.currentWaterData.flowRate &&
@@ -31,41 +51,87 @@ export function getAAStatus(): "ok" | "error" {
   ) {
     return "ok";
   }
+
   return "error";
 }
 
-export async function getPushsaferStatus(): Promise<
-  AlertAiguaStatus["pushsafer_status"]
-> {
-  try {
-    const response = await axios.get(
-      "https://pushsafer.statuspage.io/api/v2/summary.json",
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const status = response.data.status.indicator;
-
-    return {
-      api: status === "none" ? "ok" : "error",
-      iosApp: status === "none" ? "ok" : "error",
-      androidApp: status === "none" ? "ok" : "error",
-    };
-  } catch (error) {
-    console.error("Error fetching Pushsafer status:", error);
-    return {
-      api: "error",
-      iosApp: "error",
-      androidApp: "error",
-    };
-  }
-}
-
-export function getSaihEbroStatus(): "ok" | "error" {
+function getSaihEbroStatus(): StatusType {
   // Placeholder for SAIH Ebro status logic
   // This should be replaced with actual logic to check the SAIH Ebro API status
   return "ok";
+}
+
+// ------ Pushsafer Cached Status Check ------
+
+// current cached object
+let cachedPushsaferStatus: {
+  value: AlertAiguaStatus["pushsafer"];
+  fetchedAt: number;
+} | null = null;
+
+// promise for in-flight requests while fetching the status
+let inFlight: Promise<AlertAiguaStatus["pushsafer"]> | null = null;
+
+// map function to convert Pushsafer status (Atlassian status state) to AlertAiguaStatus format
+const mapAtlassianStatus = (status: string): StatusType => {
+  switch (status) {
+    case "operational":
+      return "ok";
+    case "degraded_performance":
+    case "under_maintenance":
+      return "warning";
+    default:
+      return "error";
+  }
+};
+
+export async function getPushsaferStatus(): Promise<
+  AlertAiguaStatus["pushsafer"]
+> {
+  const currentDate = Date.now();
+
+  if (
+    cachedPushsaferStatus &&
+    currentDate - cachedPushsaferStatus.fetchedAt < PUSHSAFER_STATUS_FRESH_FOR
+  ) {
+    return cachedPushsaferStatus.value;
+  }
+
+  if (inFlight) {
+    return inFlight;
+  }
+
+  inFlight = (async () => {
+    try {
+      const { data } = await axios.get(
+        "https://pushsafer.statuspage.io/api/v2/summary.json",
+        { timeout: 5_000 }
+      );
+
+      const components = data.components as Array<{
+        name: string;
+        status: string;
+      }>;
+
+      const find = (regex: RegExp) =>
+        mapAtlassianStatus(
+          components.find((c) => regex.test(c.name))?.status ?? "major_outage"
+        );
+
+      const result = {
+        api: find(/api/i),
+        iosApp: find(/ios/i),
+        androidApp: find(/android/i),
+      } as const;
+
+      cachedPushsaferStatus = { value: result, fetchedAt: Date.now() };
+      return result;
+    } catch (err) {
+      return { api: "error", iosApp: "error", androidApp: "error" } as const;
+    } finally {
+      inFlight = null;
+    }
+  })();
+
+  return inFlight;
 }

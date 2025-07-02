@@ -6,6 +6,16 @@ let p = new push({
   debug: env.NODE_ENV === "development",
 });
 
+/**
+ * Sends a notification using Pushsafer.
+ *
+ * @param {string} title - The title of the notification.
+ * @param {string} message - The message content of the notification.
+ * @param {string} device - The device identifier to send the notification to.
+ * @param {boolean} [isCritical=false] - Whether the notification is critical (default is false).
+ * @param {string} [url] - Optional URL to include in the notification.
+ * @param {string} [urlTitle] - Optional title for the URL link in the notification.
+ */
 export function sendNotification(
   title: string,
   message: string,

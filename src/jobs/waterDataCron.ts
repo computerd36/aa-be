@@ -29,7 +29,16 @@ async function updateWaterData() {
         lastUpdated: parseLocalDateTime(waterLevelData.fecha),
         lastFetched: new Date(),
       };
-      console.log("Updated appState:", appState.currentWaterData);
+      console.log("Updated waterLevel:", appState.currentWaterData.waterLevel);
+      console.log("Updated flowRate:", appState.currentWaterData.flowRate);
+      console.log(
+        "Updated lastUpdated:",
+        appState.currentWaterData.lastUpdated
+      );
+      console.log(
+        "Updated lastFetched:",
+        appState.currentWaterData.lastFetched
+      );
     } else {
       console.warn("Incomplete sensor data:", waterData);
     }

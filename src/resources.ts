@@ -9,7 +9,7 @@ export type PushsaferNameObject = {
   value: number;
 };
 
-type StatusType = "ok" | "warning" | "error";
+export type StatusType = "ok" | "warning" | "error";
 
 export type AlertAiguaStatus = {
   alertaigua: StatusType;
