@@ -58,6 +58,9 @@ devDependencies:
   '@types/node':
     specifier: ^20.14.9
     version: 20.17.27
+  '@types/node-cron':
+    specifier: ^3.0.11
+    version: 3.0.11
   '@types/pg':
     specifier: ^8.15.2
     version: 8.15.2
@@ -831,6 +834,10 @@ packages:
     resolution: {integrity: sha512-bhhdtPw7JqCiEfC9Jimx5LqX9BDIPJEh2q/fQ4bqbBPtyEZYr3cvF22NwG0DmPZNYA0CAf2CnqDB4KIGGpJcaw==}
     dependencies:
       '@types/express': 5.0.1
+    dev: true
+
+  /@types/node-cron@3.0.11:
+    resolution: {integrity: sha512-0ikrnug3/IyneSHqCBeslAhlK2aBfYek1fGo4bP4QnZPmiqSGRK+Oy7ZMisLWkesffJvQ1cqAcBnJC+8+nxIAg==}
     dev: true
 
   /@types/node@20.17.27:

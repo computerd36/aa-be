@@ -29,9 +29,13 @@ export interface User {
 interface AppState {
   currentWaterData: WaterData | null;
   errorCount: number;
+  isFetching: boolean;
+  isUnavailable: boolean;
 }
 
 export const appState: AppState = {
   currentWaterData: null,
   errorCount: 0,
+  isFetching: false,
+  isUnavailable: false,
 };

@@ -17,7 +17,7 @@ interface AlertCheckResult {
   prevState: AlarmState;
   newState: AlarmState;
   currentValue: number;
-  thresshold: number;
+  threshold: number;
   metric: "level" | "flowrate";
 }
 
@@ -29,7 +29,7 @@ interface AlertCheckResult {
  *
  * @returns {Promise<AlertCheckResult[]>} - A promise that resolves to an array of AlertCheckResult objects,
  * where each object contains the user ID, previous state, new state, current value,
- * thresshold, and metric type for users whose alert state needs to be changed.
+ * threshold, and metric type for users whose alert state needs to be changed.
  */
 export async function checkAllUserAlerts(
   level: number,
@@ -51,12 +51,20 @@ export async function checkAllUserAlerts(
   return results;
 }
 
-// TODO: has to check individal users if alert conditions are met, if so return AlertCheckResult if not return null
+/**
+ * Checks the alert state of a user based on the current value of a metric (level or flowrate).
+ *
+ * @param {User} user - The user object to check the alert for.
+ * @param {number} currentValue - The current value of the metric (level or flowrate) for the user.
+ *
+ * @returns {Promise<AlertCheckResult | null>} - A promise that resolves to an AlertCheckResult object
+ * if the user's alert state has changed, or null if there are no changes to the user's alert state.
+ */
 export async function checkUserAlert(
   user: User,
   currentValue: number
 ): Promise<AlertCheckResult | null> {
-  const thresshold = user.value.toNumber();
+  const threshold = user.value.toNumber();
   let consecutiveNormalCount = user.consecutiveNormalCount ?? 0;
 
   const prevState: AlarmState = user.alarmState;
@@ -65,8 +73,8 @@ export async function checkUserAlert(
   switch (prevState) {
     // case one: user is on normal state
     case "normal":
-      // check if the current value is above the thresshold
-      if (currentValue >= thresshold) {
+      // check if the current value is above the threshold
+      if (currentValue >= threshold) {
         newState = "initialAlarm";
       } else {
         consecutiveNormalCount = 0; // reset consecutive normal coun
@@ -75,11 +83,11 @@ export async function checkUserAlert(
 
     // case two: user is on initial alarm state (was warned before)
     case "initialAlarm":
-      // check if the current value is above the thresshold with a delta percentage, if so trugger escalation alarm
-      if (currentValue >= thresshold * (1 + DELTA_PERCENTAGE / 100)) {
+      // check if the current value is above the threshold with a delta percentage, if so trugger escalation alarm
+      if (currentValue >= threshold * (1 + DELTA_PERCENTAGE / 100)) {
         newState = "escalationAlarm";
         consecutiveNormalCount = 0; // reset consecutive normal count
-      } else if (currentValue < thresshold) {
+      } else if (currentValue < threshold) {
         consecutiveNormalCount++;
         if (consecutiveNormalCount >= CLEAR_TRESHHOlD_COUNT) {
           newState = "normal";
@@ -92,7 +100,7 @@ export async function checkUserAlert(
 
     // case three: user is on escalation alarm state (was warned twice before)
     case "escalationAlarm":
-      if (currentValue < thresshold) {
+      if (currentValue < threshold) {
         consecutiveNormalCount++;
         if (consecutiveNormalCount >= CLEAR_TRESHHOlD_COUNT) {
           newState = "normal";
@@ -112,7 +120,7 @@ export async function checkUserAlert(
 
   // update user in the database
   await prismaClient.user.update({
-    where: { deviceId: user.deviceId },
+    where: { id: user.id },
     data: {
       alarmState: newState,
       consecutiveNormalCount: consecutiveNormalCount,
@@ -124,12 +132,12 @@ export async function checkUserAlert(
     prevState: prevState,
     newState: newState,
     currentValue: currentValue,
-    thresshold: thresshold,
+    threshold: threshold,
     metric: user.metric as "level" | "flowrate",
   };
 }
 
-export async function proccessAlertResults(
+export async function processAlertResults(
   results: AlertCheckResult[]
 ): Promise<void> {
   for (const result of results) {
@@ -154,6 +162,36 @@ export async function proccessAlertResults(
         result.newState === "escalationAlarm"
         ? true
         : false
+    );
+  }
+}
+
+export async function warnAllUsersServiceUnavailable(): Promise<void> {
+  const users = await prismaClient.user.findMany();
+
+  for (const user of users) {
+    const message = getMessage(user.language, "serviceUnavailable");
+
+    sendNotification(
+      message.title,
+      message.body,
+      user.deviceId.toString(),
+      false
+    );
+  }
+}
+
+export async function warnAllUsersServiceAvailable(): Promise<void> {
+  const users = await prismaClient.user.findMany();
+
+  for (const user of users) {
+    const message = getMessage(user.language, "serviceAvailable");
+
+    sendNotification(
+      message.title,
+      message.body,
+      user.deviceId.toString(),
+      false
     );
   }
 }

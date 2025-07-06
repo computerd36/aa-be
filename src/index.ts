@@ -1,6 +1,6 @@
 import express from "express";
 import { prismaClient } from "../prisma/prismaClient";
-import "./jobs/waterDataCron";
+import "./services/waterDataScheduler";
 import { env } from "./env";
 
 // routers
