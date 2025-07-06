@@ -1,8 +1,8 @@
-import { SUPPORTED_LANGUAGES } from "~/constants/constants";
-import { PushsaferNameObject } from "~/resources";
+import { SUPPORTED_LANGUAGES } from "../constants/constants";
+import { PushsaferNameObject } from "../resources";
 
 export function parseDeviceName(name: string): PushsaferNameObject | null {
-  const nameParts = name.split("-");
+  const nameParts = name.replace(" ", "").split("-");
 
   if (nameParts.length !== 4) return null;
 
@@ -22,8 +22,4 @@ export function parseDeviceName(name: string): PushsaferNameObject | null {
     metric: metric as "level" | "flowrate",
     value,
   };
-}
-
-export function formatDeviceName(data: PushsaferNameObject): string {
-  return `${data.name}-${data.language}-${data.metric}-${data.value}`;
 }

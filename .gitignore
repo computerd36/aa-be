@@ -9,4 +9,5 @@
 
 .DS_Store
 
-/src/generated/prisma
+# Vitest
+/coverage/

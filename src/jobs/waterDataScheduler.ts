@@ -51,10 +51,10 @@ async function updateWaterData(): Promise<void> {
         break;
       } catch (err) {
         console.error(`Fetch attempt ${attempt} failed:`, err);
-        appState.errorCount++;
 
         if (attempt === MAX_FETCH_RETRIES) {
           console.error("Max fetch retries reached; aborting update.");
+          appState.errorCount++;
           return;
         }
         // wait before next attempt

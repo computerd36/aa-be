@@ -8,12 +8,16 @@
 		"node": ">=18.11",
 		"pnpm": ">=7.27"
 	},
+	"type": "module",
 	"scripts": {
 		"dev": "pnpm /dev:.*/",
 		"dev:build": "esbuild dev.ts ./src --bundle --outdir=dist --packages=external --platform=node --sourcemap --watch",
 		"dev:run": "node --inspect -r ./dist/dev.js --watch dist/src",
 		"build": "esbuild index=./src --bundle --minify --outdir=dist --packages=external --platform=node",
-		"start": "prisma migrate deploy && prisma generate && node dist/index.js"
+		"start": "prisma migrate deploy && prisma generate && node dist/index.js",
+		"test": "vitest",
+		"test:watch": "vitest --watch",
+		"coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@prisma/client": "^6.8.2",
@@ -37,9 +41,11 @@
 		"@types/node": "^20.14.9",
 		"@types/node-cron": "^3.0.11",
 		"@types/pg": "^8.15.2",
+		"@vitest/coverage-istanbul": "^3.2.4",
 		"drizzle-kit": "^0.31.1",
 		"prisma": "^6.10.1",
 		"tsx": "^4.19.4",
+		"vitest": "^3.2.4",
 		"zod": "^3.25.36"
 	}
 }

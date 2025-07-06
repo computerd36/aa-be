@@ -2,13 +2,14 @@ import { getMessage } from "~/constants/messages";
 import { prismaClient } from "../../prisma/prismaClient";
 import { parseDeviceName } from "../utils/devicename";
 import { sendNotification } from "./notificationService";
+import { User } from "@prisma/client";
 
 export async function createUser(deviceData: {
   id: string;
   name: string;
   group?: string;
   guest?: string;
-}) {
+}): Promise<User> {
   const deviceId = Number(deviceData.id);
   const deviceName = deviceData.name;
   const parsed = parseDeviceName(deviceName);
