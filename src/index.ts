@@ -1,7 +1,9 @@
 import express from "express";
 import { prismaClient } from "../prisma/prismaClient";
-import "./services/waterDataScheduler";
 import { env } from "./env";
+
+// let waterDataScheduler run on server start
+import "./jobs/waterDataScheduler";
 
 // routers
 import webhookRouter from "./routes/webhook";
