@@ -1,80 +1,74 @@
-# Node.js + TypeScript Starter
+# AlertAigua 🌊 – Flood-Alert Backend
 
 ![](../../actions/workflows/ci.yml/badge.svg)
 
-[![](https://railway.app/button.svg)](https://railway.app/template/8AWlL5?referralCode=bonus)
+Backend service for the local flood-warning system in **Arens de Lledó**.  
+It pulls water-level data from the **SAIH Ebro API**, checks user-defined thresholds and sends high-priority push alerts through **Pushsafer**.
 
-## Key Features
+---
 
-- [<img src="https://user-images.githubusercontent.com/17180392/211619716-8630ae1a-e5ea-424f-87a6-f3188edae821.svg" height=19.2 align=center /> TypeScript](https://www.typescriptlang.org/)
-  - [Typed environment variables](dev.ts)
-  - [TypeScript & JavaScript compatibility](https://www.typescriptlang.org/tsconfig#allowJs)
-  - [ES Modules & CommonJS compatibility](https://esbuild.github.io/api/#format-commonjs)
-- [<img src="https://user-images.githubusercontent.com/124377191/228204788-98a151c8-fc70-4dac-a966-4be6513aafc6.png" height=19.2 align=center /> Node.js](https://nodejs.org/)
-  - [Live Reload](https://nodejs.org/en/blog/release/v18.11.0)
-  - [Debugging](https://nodejs.org/en/docs/guides/debugging-getting-started)
-- [<img src="https://user-images.githubusercontent.com/124377191/228203400-d65b9566-d92e-48b1-9b46-9aa95c05fb21.svg" height=19.2 align=center /> esbuild](https://esbuild.github.io/)
-  - [Fast bundling](https://esbuild.github.io/faq/#benchmark-details)
-  - [Fast transpiling](https://esbuild.github.io/faq/#benchmark-details)
-- [<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/17180392/266780371-74b32ff7-5cc3-45e1-af80-923a05c9f87b.svg" height=19.2 align=center /> Biome](https://biomejs.dev/)
-  - [Fast linting](https://github.com/biomejs/biome/tree/main/benchmark#linting)
-  - [Fast formatting](https://github.com/biomejs/biome/tree/main/benchmark#formatter)
-  - [Import sorting](https://biomejs.dev/analyzer/#imports-sorting)
-- [<img src="https://user-images.githubusercontent.com/124377191/228447757-78408c15-e914-4fb3-9135-f1ff45ee3fce.svg" height=19.2 align=center /> GitHub](https://github.com)
-  - [One click template](https://github.com/dayblox/node-ts/generate)
-  - [Continuous Integration with dependency caching](.github/workflows/ci.yml)
+## Tech Stack
+
+| Layer               | Tooling / Runtime                       | Rationale                              |
+| ------------------- | --------------------------------------- | -------------------------------------- |
+| Runtime & Language  | **Node.js 18+**, **TypeScript**         | Async I/O, type safety                 |
+| Build & Reload      | **esbuild**                             | Blazing-fast bundling/transpiling      |
+| Web Framework       | **Express**                             | Minimal, unopinionated                 |
+| Lint & Format       | **Biome**                               | Fast linting & auto-fix                |
+| Tests               | **Vitest**                              | Unit & API tests                       |
+| Coverage            | **Istanbul**                            | Quality gate                           |
+| Database            | **PostgreSQL** (+ Timescale extension)  | Efficient time-series queries          |
+| CI/CD               | **GitHub Actions**                      | Lint · Test · Build · Coverage         |
+| Deployment          | **Railway** (Docker)                    | Auto-scaling, low ops overhead         |
+
+---
 
 ## Prerequisites
 
-- [<img src="https://user-images.githubusercontent.com/124377191/228203877-9975d517-140a-491d-80f5-9cca049143a6.svg" height=19.2 align=center /> pnpm](https://pnpm.io/installation) `>=7.27.0`
-  - [Running multiple scripts in parallel](https://pnpm.io/cli/run#running-multiple-scripts)
-  - [Automatic Node.js version management](https://pnpm.io/npmrc#use-node-version)
+- [pnpm](https://pnpm.io/installation) ≥ 7.27  
+  *(Installs the correct Node.js version automatically.)*
 
-## Getting Started
+---
 
-1.  **[Deploy on Railway](https://railway.app/template/8AWlL5?referralCode=bonus)** or **[use this template](https://github.com/dayblox/node-ts/generate)**
+## Quick Start
 
-2.  **Clone** the repository
+```bash
+# 1 Clone repository
+git clone https://github.com/<user>/AlertAigua.git
+cd AlertAigua
 
-3.  **Install** dependencies
+# 2 Install dependencies
+pnpm i
+````
 
-    ```sh
-    pnpm i
-    ```
+### Environment variables
+  1. Duplicate the file **`.env.template`** and rename the copy to **`.env.local`** in the project root.
+  2. Fill in every variable - leaving any placeholder blank will prevent the server from booting. All values are validated at runtime with **zod**, so typos are caught early.
+  3. For the required **SAIH_EBRO_API_KEY**, first [create a SAIH Ebro account](https://www.saihebro.com/usuarios/registro), then request an API key via one of the contact channels listed [here](https://www.saihebro.com/contacto/direcciones).
 
-4.  Create environment file `env.ts` at the root
+---
 
-    ```ts
-    export default {
-      PORT: "3000",
-    };
-    ```
+## Scripts
 
-    #
+| Command         | Purpose                             |
+| --------------- | ----------------------------------- |
+| `pnpm dev`      | Start in dev mode with live reload  |
+| `pnpm test`     | Run full test suite                 |
+| `pnpm coverage` | Run tests **with coverage report**  |
+| `pnpm build`    | Create production bundle            |
+| `pnpm start`    | Launch built bundle (after `build`) |
 
-    _Optionally_ typecheck environment with `zod`
+---
 
-    ```ts
-    import { z } from "zod";
+## Deploying on Railway 🚂
 
-    z.object({
-      PORT: z.coerce.number(),
-      URL: z.string().url(),
-      UUID: z.string().uuid(),
-      EMAIL: z.string().email().optional(),
-    }).parse(process.env);
-    ```
+1. Create a new Railway project.
+2. Link this repository.
+3. Add secrets from the .env.template file to the deployed version
+4. Hit **Deploy** – Railway builds the Docker image and scales automatically.
 
-## Usage
+---
 
-- **Development** mode (**debug**)
+## License
 
-  ```sh
-  pnpm dev
-  ```
-
-- **Production** build
-
-  ```sh
-  pnpm build && pnpm start
-  ```
+MIT – see [`LICENSE`](LICENSE).
