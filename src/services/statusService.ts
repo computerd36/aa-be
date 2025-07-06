@@ -1,7 +1,11 @@
 import axios from "axios";
 import { AlertAiguaStatus, StatusType } from "../resources";
 import { appState } from "~/state/appState";
-import { PUSHSAFER_STATUS_FRESH_FOR } from "~/constants/constants";
+import {
+  AGE_THRESHOLD,
+  ERROR_THRESHOLD,
+  PUSHSAFER_STATUS_FRESH_FOR,
+} from "~/constants/constants";
 
 /**
  * Gets the current status of the AlertAigua system, including the status of
@@ -11,66 +15,65 @@ import { PUSHSAFER_STATUS_FRESH_FOR } from "~/constants/constants";
  */
 export async function getStatus(): Promise<AlertAiguaStatus> {
   let status: AlertAiguaStatus = {
-    alertaigua: "error",
-    pushsafer: {
-      api: "error",
-      iosApp: "error",
-      androidApp: "error",
-    },
-    saihebro: "error",
+    saihebro_api: "ok",
+    saihebro_station: "ok",
+    pushsafer_api: "ok",
+    pushsafer_iosApp: "ok",
+    pushsafer_androidApp: "ok",
   };
 
-  status.alertaigua = getAAStatus();
-  status.pushsafer = await getPushsaferStatus();
-  status.saihebro = getSaihEbroStatus();
+  const pushsaferStatus = await getPushsaferStatus();
 
-  return {
-    alertaigua: status.alertaigua,
-    pushsafer: {
-      api: status.pushsafer.api,
-      iosApp: status.pushsafer.iosApp,
-      androidApp: status.pushsafer.androidApp,
-    },
-    saihebro: status.saihebro,
-  };
+  status.saihebro_api = getSaihEbroAPIStatus();
+  status.saihebro_station = getSaihEbroStationStatus();
+  status.pushsafer_api = pushsaferStatus.api;
+  status.pushsafer_iosApp = pushsaferStatus.iosApp;
+  status.pushsafer_androidApp = pushsaferStatus.androidApp;
+
+  return status;
 }
 
-function getAAStatus(): StatusType {
-  // TODO: add "warning" StatusType
-  if (
-    appState &&
-    appState.currentWaterData.flowRate &&
-    appState.currentWaterData.waterLevel &&
-    appState.currentWaterData.lastUpdated &&
-    appState.currentWaterData.lastFetched &&
-    appState.errorCount < 5 &&
-    appState.currentWaterData.lastUpdated.getTime() >
-      Date.now() - 45 * 60 * 1000 &&
-    appState.currentWaterData.lastFetched.getTime() >
-      Date.now() - 15 * 60 * 1000
-  ) {
+function getSaihEbroAPIStatus(): StatusType {
+  const isError = appState.errorCount > ERROR_THRESHOLD;
+
+  if (isError) {
+    return "error";
+  } else {
     return "ok";
   }
-
-  return "error";
 }
 
-function getSaihEbroStatus(): StatusType {
-  // Placeholder for SAIH Ebro status logic
-  // This should be replaced with actual logic to check the SAIH Ebro API status
-  return "ok";
+function getSaihEbroStationStatus(): StatusType {
+  const currentWaterData = appState.currentWaterData;
+  const staleCutoff = new Date(Date.now() - AGE_THRESHOLD); // date which is x houres ago (according to AGE_THRESHOLD)
+  const isStale =
+    !currentWaterData || currentWaterData.lastUpdated < staleCutoff;
+
+  if (isStale) {
+    return "error";
+  } else {
+    return "ok";
+  }
 }
 
 // ------ Pushsafer Cached Status Check ------
 
 // current cached object
 let cachedPushsaferStatus: {
-  value: AlertAiguaStatus["pushsafer"];
+  value: {
+    api: StatusType;
+    iosApp: StatusType;
+    androidApp: StatusType;
+  };
   fetchedAt: number;
 } | null = null;
 
 // promise for in-flight requests while fetching the status
-let inFlight: Promise<AlertAiguaStatus["pushsafer"]> | null = null;
+let inFlight: Promise<{
+  api: StatusType;
+  iosApp: StatusType;
+  androidApp: StatusType;
+}> | null = null;
 
 // map function to convert Pushsafer status (Atlassian status state) to AlertAiguaStatus format
 const mapAtlassianStatus = (status: string): StatusType => {
@@ -85,9 +88,11 @@ const mapAtlassianStatus = (status: string): StatusType => {
   }
 };
 
-export async function getPushsaferStatus(): Promise<
-  AlertAiguaStatus["pushsafer"]
-> {
+export async function getPushsaferStatus(): Promise<{
+  api: StatusType;
+  iosApp: StatusType;
+  androidApp: StatusType;
+}> {
   const currentDate = Date.now();
 
   if (

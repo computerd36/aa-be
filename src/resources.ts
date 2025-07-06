@@ -11,12 +11,10 @@ export type PushsaferNameObject = {
 
 export type StatusType = "ok" | "warning" | "error";
 
-export type AlertAiguaStatus = {
-  alertaigua: StatusType;
-  pushsafer: {
-    api: StatusType;
-    iosApp: StatusType;
-    androidApp: StatusType;
-  };
-  saihebro: StatusType;
-};
+export interface AlertAiguaStatus {
+  pushsafer_api: StatusType;
+  pushsafer_iosApp: StatusType;
+  pushsafer_androidApp: StatusType;
+  saihebro_api: StatusType;
+  saihebro_station: StatusType;
+}

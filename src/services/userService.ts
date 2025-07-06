@@ -10,6 +10,9 @@ export async function createUser(deviceData: {
   group?: string;
   guest?: string;
 }): Promise<User> {
+  // TODO: remove this later
+  console.log("Device name:", deviceData.name);
+
   const deviceId = Number(deviceData.id);
   const deviceName = deviceData.name;
   const parsed = parseDeviceName(deviceName);

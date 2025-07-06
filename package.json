@@ -8,7 +8,6 @@
 		"node": ">=18.11",
 		"pnpm": ">=7.27"
 	},
-	"type": "module",
 	"scripts": {
 		"dev": "pnpm /dev:.*/",
 		"dev:build": "esbuild dev.ts ./src --bundle --outdir=dist --packages=external --platform=node --sourcemap --watch",
