@@ -14,6 +14,15 @@ enum AlarmState {
   escalationAlarm
 }
 
+enum MessageType {
+  welcome
+  initialAlarm
+  escalationAlarm
+  endAlarm
+  serviceUnavailable
+  serviceAvailable
+}
+
 // ---- Models ------
 model User {
   id                     String     @id @default(uuid())
@@ -31,4 +40,18 @@ model User {
   // TIMESTAMPS
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
+
+  // RELATIONS
+  notifications Notification[] // notifications sent to the user
+}
+
+model Notification {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  type      MessageType // type of the message (see enum)
+  message   String // the message to be sent
+  success   Boolean // whether the message was sent successfully
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
