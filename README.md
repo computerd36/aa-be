@@ -12,12 +12,12 @@ It pulls water-level data from the **SAIH Ebro API**, checks user-defined thresh
 | Layer               | Tooling / Runtime                       | Rationale                              |
 | ------------------- | --------------------------------------- | -------------------------------------- |
 | Runtime & Language  | **Node.js 18+**, **TypeScript**         | Async I/O, type safety                 |
-| Build & Reload      | **esbuild**                             | Blazing-fast bundling/transpiling      |
+| Build & Reload      | **esbuild**                             | Fast bundling/transpiling              |
 | Web Framework       | **Express**                             | Minimal, unopinionated                 |
 | Lint & Format       | **Biome**                               | Fast linting & auto-fix                |
 | Tests               | **Vitest**                              | Unit & API tests                       |
 | Coverage            | **Istanbul**                            | Quality gate                           |
-| Database            | **PostgreSQL** (+ Timescale extension)  | Efficient time-series queries          |
+| Database            | **PostgreSQL**                          | Efficient queries                      |
 | CI/CD               | **GitHub Actions**                      | Lint · Test · Build · Coverage         |
 | Deployment          | **Railway** (Docker)                    | Auto-scaling, low ops overhead         |
 
