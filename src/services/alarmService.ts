@@ -1,4 +1,4 @@
-import { AlarmState, User } from "@prisma/client";
+import { AlarmState, MessageType, User } from "@prisma/client";
 import { prismaClient } from "../../prisma/prismaClient";
 
 // services
@@ -155,9 +155,11 @@ export async function processAlertResults(
 
     // send notification to the user
     sendNotification(
+      result.newState as MessageType,
       message.title,
       message.body(result.metric, result.currentValue),
       user.deviceId.toString(),
+      user.id.toString(),
       result.newState === "initialAlarm" ||
         result.newState === "escalationAlarm"
         ? true
@@ -173,9 +175,11 @@ export async function warnAllUsersServiceUnavailable(): Promise<void> {
     const message = getMessage(user.language, "serviceUnavailable");
 
     sendNotification(
+      "serviceUnavailable",
       message.title,
       message.body,
       user.deviceId.toString(),
+      user.id.toString(),
       false
     );
   }
@@ -188,9 +192,11 @@ export async function warnAllUsersServiceAvailable(): Promise<void> {
     const message = getMessage(user.language, "serviceAvailable");
 
     sendNotification(
+      "serviceAvailable",
       message.title,
       message.body,
       user.deviceId.toString(),
+      user.id.toString(),
       false
     );
   }

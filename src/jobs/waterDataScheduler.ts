@@ -41,6 +41,11 @@ async function updateWaterData(): Promise<void> {
     );
     const senalParam = [metricMap.level, metricMap.flowrate].join(",");
 
+    // assert that both sensors are defined
+    if (!metricMap.level || !metricMap.flowrate) {
+      throw new Error("Required sensors are not defined in SENSORS constant.");
+    }
+
     // fetching of the water data with retires if it fails
     let data: SaihEbroSensorData[] | null = null;
     let backoff = INITIAL_BACKOFF_MS;
@@ -112,12 +117,20 @@ async function updateWaterData(): Promise<void> {
 
     if (appState.errorCount >= ERROR_THRESHOLD || isStale) {
       if (!appState.isUnavailable) {
-        await warnAllUsersServiceUnavailable();
+        try {
+          await warnAllUsersServiceUnavailable();
+        } catch (err) {
+          console.error("Error while warning users:", err);
+        }
         appState.isUnavailable = true;
       }
     } else {
       if (appState.isUnavailable) {
-        await warnAllUsersServiceAvailable();
+        try {
+          await warnAllUsersServiceAvailable();
+        } catch (err) {
+          console.error("Error while warning users:", err);
+        }
         appState.isUnavailable = false;
       }
     }
@@ -126,10 +139,10 @@ async function updateWaterData(): Promise<void> {
 
     // log for successful update
     console.log("Water data updated successfully:", {
-      waterLevel: currentWaterData!.waterLevel,
-      flowRate: currentWaterData!.flowRate,
-      lastFetched: currentWaterData!.lastFetched,
-      lastUpdated: currentWaterData!.lastUpdated,
+      waterLevel: currentWaterData?.waterLevel,
+      flowRate: currentWaterData?.flowRate,
+      lastFetched: currentWaterData?.lastFetched,
+      lastUpdated: currentWaterData?.lastUpdated,
       errorCount: appState.errorCount,
       isUnavailable: appState.isUnavailable,
     });
@@ -140,4 +153,6 @@ async function updateWaterData(): Promise<void> {
 updateWaterData();
 
 // schedule the update on every full 5 minutes of the hour
-cron.schedule("*/5 * * * *", updateWaterData);
+cron.schedule("*/5 * * * *", () => {
+  updateWaterData().catch((err) => console.error("Cron job failed:", err));
+});

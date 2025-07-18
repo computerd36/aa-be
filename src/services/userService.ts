@@ -4,15 +4,24 @@ import { parseDeviceName } from "../utils/devicename";
 import { sendNotification } from "./notificationService";
 import { User } from "@prisma/client";
 
+/**
+ * Creates a new user in the database based on the provided device data.
+ *
+ * @param {Object} deviceData - The data of the device to create a user for.
+ * @param {string} deviceData.id - The ID of the device.
+ * @param {string} deviceData.name - The name of the device.
+ * @param {string} [deviceData.group] - Optional group for the user (e.g., "dev").
+ * @param {string} [deviceData.guest] - Optional guest identifier.
+ *
+ * @returns {Promise<User>} A promise that resolves to the created User object.
+ * @throws {Error} If the device name format is invalid or if user creation fails.
+ */
 export async function createUser(deviceData: {
   id: string;
   name: string;
   group?: string;
   guest?: string;
 }): Promise<User> {
-  // TODO: remove this later
-  console.log("Device name:", deviceData.name);
-
   const deviceId = Number(deviceData.id);
   const deviceName = deviceData.name;
   const parsed = parseDeviceName(deviceName);
@@ -38,6 +47,7 @@ export async function createUser(deviceData: {
   const welcomeMessage = getMessage(user.language, "welcome");
 
   sendNotification(
+    "welcome",
     welcomeMessage.title,
     welcomeMessage.body(
       user.name,
@@ -47,6 +57,7 @@ export async function createUser(deviceData: {
       user.metric as "level" | "flowrate"
     ),
     user.deviceId.toString(),
+    user.id.toString(),
     false
   );
 
