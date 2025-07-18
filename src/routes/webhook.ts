@@ -73,27 +73,33 @@ webhookRouter.post(
       if (deviceActionResult.success) {
         const data = deviceActionResult.data;
 
-        if (data.action === "add-device") {
-          // check if user already exists, if so delete old one
-          try {
-            await deleteUser(data.id);
-            console.log(`Existing user with ID ${data.id} deleted`);
-          } catch (error) {
-            console.log(
-              `No existing user found with ID ${data.id}, proceeding with creation`
-            );
-          }
+        switch (data.action) {
+          case "add-device":
+            // check if user already exists, if so delete old one
+            try {
+              await deleteUser(data.id);
+              console.log(`Existing user with ID ${data.id} deleted`);
+            } catch (error) {
+              console.log(
+                `No existing user found with ID ${data.id}, proceeding with creation`
+              );
+            }
 
-          await createUser({
-            id: data.id,
-            name: data.name,
-            group: data.group,
-            guest: data.guest,
-          });
-          console.log("User created successfully");
-        } else if (data.action === "delete-device") {
-          await deleteUser(data.id);
-          console.log("User deleted successfully");
+            await createUser({
+              id: data.id,
+              name: data.name,
+              group: data.group,
+              guest: data.guest,
+            });
+            console.log("User created successfully");
+            break;
+          case "delete-device":
+            await deleteUser(data.id);
+            console.log("User deleted successfully");
+            break;
+          default:
+            console.warn(`Unhandled action: ${data.action} for ID ${data.id}`);
+            break;
         }
 
         res.sendStatus(204);
