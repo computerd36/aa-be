@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { fetchWaterData } from "../services/waterDataService";
 import { appState, SaihEbroSensorData } from "../state/appState";
-import { parseLocalDateTime } from "~/utils/time";
+import { parseSaihDateTime, now, nowTimestamp } from "~/utils/time";
 import {
   ERROR_THRESHOLD,
   SENSORS,
@@ -84,18 +84,21 @@ async function updateWaterData(): Promise<void> {
     }
 
     // date validation and parsing
-    const parsedDate = parseLocalDateTime(lvlData.fecha);
+    const parsedDate = parseSaihDateTime(lvlData.fecha);
     if (!(parsedDate instanceof Date) || isNaN(parsedDate.getTime())) {
       console.error("Invalid fecha timestamp:", lvlData.fecha);
       appState.errorCount++;
       return;
     }
 
-    // updating app state, resettinh error count
+    // Get current time for lastFetched
+    const lastFetched = now();
+
+    // updating app state, resetting error count
     appState.currentWaterData = {
       waterLevel: lvlData.valor,
       flowRate: flwData.valor,
-      lastFetched: new Date(),
+      lastFetched: lastFetched,
       lastUpdated: parsedDate,
     };
     appState.errorCount = 0;
@@ -111,7 +114,7 @@ async function updateWaterData(): Promise<void> {
     appState.errorCount++;
   } finally {
     const currentWaterData = appState.currentWaterData;
-    const staleCutoff = new Date(Date.now() - AGE_THRESHOLD); // date which is x houres ago (according to AGE_THRESHOLD)
+    const staleCutoff = new Date(nowTimestamp() - AGE_THRESHOLD); // date which is x hours ago (according to AGE_THRESHOLD)
     const isStale =
       !currentWaterData || currentWaterData.lastUpdated < staleCutoff; // check if no data or data is stale
 

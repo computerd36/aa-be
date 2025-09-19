@@ -35,7 +35,7 @@ export async function createUser(deviceData: {
       deviceId,
       name: parsed.name,
       language: parsed.language,
-      value: parsed.value,
+      value: parsed.value / 100, // convert to m value (e.g., 75 cm -> 0.75 m)
       role: deviceData.group === "dev" ? "dev" : "user",
     },
   });

@@ -8,7 +8,7 @@ import { getMessage } from "../constants/messages";
 // constants
 import {
   DELTA_PERCENTAGE,
-  CLEAR_TRESHHOlD_COUNT,
+  CLEAR_THRESHOLD_COUNT,
 } from "../constants/constants";
 
 // interface for result
@@ -89,7 +89,7 @@ export async function checkUserAlert(
         consecutiveNormalCount = 0; // reset consecutive normal count
       } else if (currentValue < threshold) {
         consecutiveNormalCount++;
-        if (consecutiveNormalCount >= CLEAR_TRESHHOlD_COUNT) {
+        if (consecutiveNormalCount >= CLEAR_THRESHOLD_COUNT) {
           newState = "normal";
           consecutiveNormalCount = 0; // reset consecutive normal count
         }
@@ -102,7 +102,7 @@ export async function checkUserAlert(
     case "escalationAlarm":
       if (currentValue < threshold) {
         consecutiveNormalCount++;
-        if (consecutiveNormalCount >= CLEAR_TRESHHOlD_COUNT) {
+        if (consecutiveNormalCount >= CLEAR_THRESHOLD_COUNT) {
           newState = "normal";
           consecutiveNormalCount = 0;
         }

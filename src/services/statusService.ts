@@ -6,6 +6,7 @@ import {
   ERROR_THRESHOLD,
   PUSHSAFER_STATUS_FRESH_FOR,
 } from "~/constants/constants";
+import { nowTimestamp } from "~/utils/time";
 
 /**
  * Gets the current status of the AlertAigua system, including the status of
@@ -45,7 +46,7 @@ function getSaihEbroAPIStatus(): StatusType {
 
 function getSaihEbroStationStatus(): StatusType {
   const currentWaterData = appState.currentWaterData;
-  const staleCutoff = new Date(Date.now() - AGE_THRESHOLD); // date which is x houres ago (according to AGE_THRESHOLD)
+  const staleCutoff = new Date(nowTimestamp() - AGE_THRESHOLD); // date which is x hours ago (according to AGE_THRESHOLD)
   const isStale =
     !currentWaterData || currentWaterData.lastUpdated < staleCutoff;
 
@@ -93,7 +94,7 @@ export async function getPushsaferStatus(): Promise<{
   iosApp: StatusType;
   androidApp: StatusType;
 }> {
-  const currentDate = Date.now();
+  const currentDate = nowTimestamp();
 
   if (
     cachedPushsaferStatus &&
@@ -129,7 +130,7 @@ export async function getPushsaferStatus(): Promise<{
         androidApp: find(/android/i),
       } as const;
 
-      cachedPushsaferStatus = { value: result, fetchedAt: Date.now() };
+      cachedPushsaferStatus = { value: result, fetchedAt: nowTimestamp() };
       return result;
     } catch (err) {
       return { api: "error", iosApp: "error", androidApp: "error" } as const;
