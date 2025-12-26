@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./env";
+import { logger } from "./logger";
 
 export function configureCORS(app: express.Express) {
   app.use(
@@ -12,7 +13,7 @@ export function configureCORS(app: express.Express) {
         if (env.CORS_ORIGINS.includes(origin)) {
           callback(null, true);
         } else {
-          console.log("CORS blocked for origin:", origin);
+          logger.info({ origin }, `CORS origin blocked: ${origin}`);
           callback(new Error("Not allowed by CORS"));
         }
       },

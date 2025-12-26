@@ -1,6 +1,7 @@
 import axios from "axios";
 import https from "https";
 import { env } from "../env";
+import { logger } from "../logger";
 
 // envs
 const baseURL = env.SAIHEBRO_API_BASE_URL;
@@ -26,7 +27,7 @@ const saihebroClient = axios.create({
 saihebroClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("Error from SAIHEBRO API:", error);
+    logger.error({ err: error }, "Error from SAIHEBRO API");
     return Promise.reject(error);
   }
 );

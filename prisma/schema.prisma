@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -27,7 +26,7 @@ enum MessageType {
 model User {
   id                     String         @id @default(uuid())
   // USER SETTINGS
-  deviceId               Int            @unique // Pushsafer ID
+  deviceId               String         @unique // Pushsafer ID of the user
   name                   String // stores the users first name
   language               String         @default("en") // users language: en, es or ca
   metric                 String         @default("level") // level or flowrate 
@@ -42,16 +41,20 @@ model User {
   updatedAt              DateTime       @updatedAt
   // RELATIONS
   notifications          Notification[] // notifications sent to the user
+
+  @@index([alarmState]) // index to quickly find users in a certain alarm state
 }
 
 model Notification {
-  id        String      @id @default(uuid())
-  deviceId  String // Pushsafer ID of the user
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  type      MessageType // type of the message (see enum)
-  title     String // the title of the message
-  message   String // the message to be sent
-  success   Boolean // whether the message was sent successfully
-  createdAt DateTime    @default(now())
+  id           String      @id @default(uuid())
+  deviceId     String // Pushsafer ID of the user
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         MessageType // type of the message (see enum)
+  title        String // the title of the message
+  message      String // the message to be sent
+  success      Boolean // whether the message was sent successfully
+  errorMessage String? // error message if the message was not sent successfully
+  url          String? // optional URL to be included in the message
+  createdAt    DateTime    @default(now())
 }

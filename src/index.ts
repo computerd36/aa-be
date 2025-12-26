@@ -12,6 +12,7 @@ import statusRouter from "./routes/status";
 // utils
 import { rateLimiter } from "./utils/ratelimit";
 import { configureCORS } from "./configureCORS";
+import { logger } from "./logger";
 
 // express initialization
 const app = express();
@@ -34,16 +35,21 @@ async function main() {
   app.use("/status", statusRouter);
 
   app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+    logger.info(`Server listening on port ${port}`);
   });
 }
 
-main()
-  .then(async () => {
-    await prismaClient.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prismaClient.$disconnect();
-    process.exit(1);
-  });
+const shutdown = async (signal: string) => {
+  logger.info(`${signal} received, shutting down gracefully`);
+  await prismaClient.$disconnect();
+  process.exit(0);
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+main().catch(async (e) => {
+  logger.error({ err: e }, "Failed to start server");
+  await prismaClient.$disconnect();
+  process.exit(1);
+});

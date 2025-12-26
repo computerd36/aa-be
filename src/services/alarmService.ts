@@ -2,14 +2,17 @@ import { AlarmState, MessageType, User } from "@prisma/client";
 import { prismaClient } from "../../prisma/prismaClient";
 
 // services
-import { sendNotification } from "./notificationService";
+import { sendNotificationAsync } from "./notificationService";
 import { getMessage } from "../constants/messages";
 
 // constants
 import {
   DELTA_PERCENTAGE,
   CLEAR_THRESHOLD_COUNT,
+  SENSORS,
+  SENSOR_URL,
 } from "../constants/constants";
+import { logger } from "~/logger";
 
 // interface for result
 interface AlertCheckResult {
@@ -146,25 +149,39 @@ export async function processAlertResults(
     });
 
     if (!user) {
-      console.warn(`User with ID ${result.userId} not found.`);
+      logger.warn({ userId: result.userId }, "User not found");
       continue;
     }
 
     // get message based on new state
     const message = getMessage(user.language, result.newState);
 
-    // send notification to the user
-    sendNotification(
-      result.newState as MessageType,
-      message.title,
-      message.body(result.metric, result.currentValue),
-      user.deviceId.toString(),
-      user.id.toString(),
-      result.newState === "initialAlarm" ||
-        result.newState === "escalationAlarm"
-        ? true
-        : false
-    );
+    const success = await sendNotificationAsync({
+      type: MessageType[result.newState as keyof typeof MessageType],
+      title: message.title,
+      message: message.body(result.metric, result.currentValue),
+      deviceId: user.deviceId.toString(),
+      userId: user.id.toString(),
+      isCritical: result.newState !== "normal",
+      url: SENSOR_URL,
+      urlTitle: message.urlTitle,
+    });
+
+    if (success) {
+      await prismaClient.user.update({
+        where: { id: user.id },
+        data: {
+          alarmState: result.newState,
+          consecutiveNormalCount: 0,
+          lastWarnedAt: new Date(),
+        },
+      });
+    } else {
+      logger.error(
+        { userId: user.id, newState: result.newState },
+        "Failed to send notification"
+      );
+    }
   }
 }
 
@@ -174,14 +191,14 @@ export async function warnAllUsersServiceUnavailable(): Promise<void> {
   for (const user of users) {
     const message = getMessage(user.language, "serviceUnavailable");
 
-    sendNotification(
-      "serviceUnavailable",
-      message.title,
-      message.body,
-      user.deviceId.toString(),
-      user.id.toString(),
-      false
-    );
+    sendNotificationAsync({
+      type: "serviceUnavailable" as MessageType,
+      title: message.title,
+      message: message.body,
+      deviceId: user.deviceId.toString(),
+      userId: user.id.toString(),
+      isCritical: false,
+    });
   }
 }
 
@@ -191,13 +208,13 @@ export async function warnAllUsersServiceAvailable(): Promise<void> {
   for (const user of users) {
     const message = getMessage(user.language, "serviceAvailable");
 
-    sendNotification(
-      "serviceAvailable",
-      message.title,
-      message.body,
-      user.deviceId.toString(),
-      user.id.toString(),
-      false
-    );
+    sendNotificationAsync({
+      type: "serviceAvailable" as MessageType,
+      title: message.title,
+      message: message.body,
+      deviceId: user.deviceId.toString(),
+      userId: user.id.toString(),
+      isCritical: false,
+    });
   }
 }

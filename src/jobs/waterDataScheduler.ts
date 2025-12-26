@@ -1,7 +1,9 @@
 import cron from "node-cron";
+import { Mutex } from "async-mutex";
 import { fetchWaterData } from "../services/waterDataService";
 import { appState, SaihEbroSensorData } from "../state/appState";
 import { parseSaihDateTime, now, nowTimestamp } from "~/utils/time";
+import { logger } from "~/logger";
 import {
   ERROR_THRESHOLD,
   SENSORS,
@@ -16,146 +18,186 @@ import {
   warnAllUsersServiceUnavailable,
 } from "~/services/alarmService";
 
-/**
- * Updates the water data by fetching it from the SAIH Ebro API and processing it
- * according to the defined sensors. It handles retries on failure, checks for stale data,
- * and manages user alerts based on the fetched data.
- *
- * @returns {Promise<void>} A promise that resolves when the water data has been updated and alerts processed.
- * @throws {Error} If there is an error fetching the water data or processing alerts.
- */
-async function updateWaterData(): Promise<void> {
-  if (appState.isFetching) return;
-  appState.isFetching = true;
+const fetchMutex = new Mutex();
 
-  try {
-    // maps sensor metrics to their IDs
-    const metricMap = SENSORS.reduce<Record<"level" | "flowrate", string>>(
-      (acc, { metric, id }) => {
-        if (metric === "level" || metric === "flowrate") {
-          acc[metric] = id;
-        }
-        return acc;
-      },
-      { level: "", flowrate: "" }
-    );
-    const senalParam = [metricMap.level, metricMap.flowrate].join(",");
+type MetricMap = Record<"level" | "flowrate", string>;
 
-    // assert that both sensors are defined
-    if (!metricMap.level || !metricMap.flowrate) {
-      throw new Error("Required sensors are not defined in SENSORS constant.");
-    }
-
-    // fetching of the water data with retires if it fails
-    let data: SaihEbroSensorData[] | null = null;
-    let backoff = INITIAL_BACKOFF_MS;
-
-    for (let attempt = 1; attempt <= MAX_FETCH_RETRIES; attempt++) {
-      try {
-        data = await fetchWaterData(senalParam);
-        break;
-      } catch (err) {
-        console.error(`Fetch attempt ${attempt} failed:`, err);
-
-        if (attempt === MAX_FETCH_RETRIES) {
-          console.error("Max fetch retries reached; aborting update.");
-          appState.errorCount++;
-          return;
-        }
-        // wait before next attempt
-        await new Promise((r) => setTimeout(r, backoff));
-        backoff *= 2;
+function buildMetricMap(): MetricMap {
+  return SENSORS.reduce<MetricMap>(
+    (acc, { metric, id }) => {
+      if (metric === "level" || metric === "flowrate") {
+        acc[metric] = id;
       }
-    }
+      return acc;
+    },
+    { level: "", flowrate: "" }
+  );
+}
 
-    const lvlData = data!.find((d) => d.senal === metricMap.level);
-    const flwData = data!.find((d) => d.senal === metricMap.flowrate);
+async function fetchWithRetry(
+  senalParam: string
+): Promise<SaihEbroSensorData[] | null> {
+  let backoff = INITIAL_BACKOFF_MS;
 
-    // further validation to be type safe
-    if (
-      !lvlData ||
-      !flwData ||
-      !Number.isFinite(lvlData.valor) ||
-      !Number.isFinite(flwData.valor)
-    ) {
-      console.error("Invalid sensor data:", { lvlData, flwData });
-      appState.errorCount++;
-      return;
-    }
+  for (let attempt = 1; attempt <= MAX_FETCH_RETRIES; attempt++) {
+    try {
+      return await fetchWaterData(senalParam);
+    } catch (err) {
+      logger.error({ err, attempt }, "Fetch attempt failed");
 
-    // date validation and parsing
-    const parsedDate = parseSaihDateTime(lvlData.fecha);
-    if (!(parsedDate instanceof Date) || isNaN(parsedDate.getTime())) {
-      console.error("Invalid fecha timestamp:", lvlData.fecha);
-      appState.errorCount++;
-      return;
-    }
-
-    // Get current time for lastFetched
-    const lastFetched = now();
-
-    // updating app state, resetting error count
-    appState.currentWaterData = {
-      waterLevel: lvlData.valor,
-      flowRate: flwData.valor,
-      lastFetched: lastFetched,
-      lastUpdated: parsedDate,
-    };
-    appState.errorCount = 0;
-
-    // processing all user alerts
-    const alerts = await checkAllUserAlerts(lvlData.valor, flwData.valor);
-    // if alerts are found, process them
-    if (alerts.length) {
-      await processAlertResults(alerts);
-    }
-  } catch (err) {
-    console.error("Unexpected error in updateWaterData:", err);
-    appState.errorCount++;
-  } finally {
-    const currentWaterData = appState.currentWaterData;
-    const staleCutoff = new Date(nowTimestamp() - AGE_THRESHOLD); // date which is x hours ago (according to AGE_THRESHOLD)
-    const isStale =
-      !currentWaterData || currentWaterData.lastUpdated < staleCutoff; // check if no data or data is stale
-
-    if (appState.errorCount >= ERROR_THRESHOLD || isStale) {
-      if (!appState.isUnavailable) {
-        try {
-          await warnAllUsersServiceUnavailable();
-        } catch (err) {
-          console.error("Error while warning users:", err);
-        }
-        appState.isUnavailable = true;
+      if (attempt === MAX_FETCH_RETRIES) {
+        logger.error("Max fetch retries reached; aborting update");
+        return null;
       }
-    } else {
-      if (appState.isUnavailable) {
-        try {
-          await warnAllUsersServiceAvailable();
-        } catch (err) {
-          console.error("Error while warning users:", err);
-        }
-        appState.isUnavailable = false;
-      }
+
+      await new Promise((r) => setTimeout(r, backoff));
+      backoff *= 2;
     }
+  }
 
-    appState.isFetching = false;
+  return null;
+}
 
-    // log for successful update
-    console.log("Water data updated successfully:", {
-      waterLevel: currentWaterData?.waterLevel,
-      flowRate: currentWaterData?.flowRate,
-      lastFetched: currentWaterData?.lastFetched,
-      lastUpdated: currentWaterData?.lastUpdated,
-      errorCount: appState.errorCount,
-      isUnavailable: appState.isUnavailable,
-    });
+function validateSensorData(
+  data: SaihEbroSensorData[],
+  metricMap: MetricMap
+): { lvlData: SaihEbroSensorData; flwData: SaihEbroSensorData } | null {
+  const lvlData = data.find((d) => d.senal === metricMap.level);
+  const flwData = data.find((d) => d.senal === metricMap.flowrate);
+
+  if (
+    !lvlData ||
+    !flwData ||
+    !Number.isFinite(lvlData.valor) ||
+    !Number.isFinite(flwData.valor)
+  ) {
+    logger.error({ lvlData, flwData }, "Invalid sensor data");
+    return null;
+  }
+
+  return { lvlData, flwData };
+}
+
+function parseTimestamp(fecha: string): Date | null {
+  const parsedDate = parseSaihDateTime(fecha);
+
+  if (!(parsedDate instanceof Date) || Number.isNaN(parsedDate.getTime())) {
+    logger.error({ fecha }, "Invalid fecha timestamp");
+    return null;
+  }
+
+  return parsedDate;
+}
+
+function isDataStale(): boolean {
+  const { currentWaterData } = appState;
+  if (!currentWaterData) return true;
+
+  const staleCutoff = new Date(nowTimestamp() - AGE_THRESHOLD);
+  return currentWaterData.lastUpdated < staleCutoff;
+}
+
+async function updateServiceAvailability(): Promise<void> {
+  const shouldBeUnavailable =
+    appState.errorCount >= ERROR_THRESHOLD || isDataStale();
+
+  if (shouldBeUnavailable && !appState.isUnavailable) {
+    try {
+      await warnAllUsersServiceUnavailable();
+    } catch (err) {
+      logger.error({ err }, "Error while warning users of unavailability");
+    }
+    appState.isUnavailable = true;
+  } else if (!shouldBeUnavailable && appState.isUnavailable) {
+    try {
+      await warnAllUsersServiceAvailable();
+    } catch (err) {
+      logger.error({ err }, "Error while warning users of availability");
+    }
+    appState.isUnavailable = false;
   }
 }
 
-// Run the update immediately on startup
+async function updateWaterData(): Promise<void> {
+  if (fetchMutex.isLocked()) {
+    logger.info("Previous fetch still in progress, skipping");
+    return;
+  }
+
+  await fetchMutex.runExclusive(async () => {
+    let success = false;
+
+    try {
+      const metricMap = buildMetricMap();
+
+      if (!metricMap.level || !metricMap.flowrate) {
+        throw new Error("Required sensors are not defined in SENSORS constant");
+      }
+
+      const senalParam = [metricMap.level, metricMap.flowrate].join(",");
+      const data = await fetchWithRetry(senalParam);
+
+      if (!data) {
+        appState.errorCount++;
+        return;
+      }
+
+      const sensorData = validateSensorData(data, metricMap);
+      if (!sensorData) {
+        appState.errorCount++;
+        return;
+      }
+
+      const parsedDate = parseTimestamp(sensorData.lvlData.fecha);
+      if (!parsedDate) {
+        appState.errorCount++;
+        return;
+      }
+
+      appState.currentWaterData = {
+        waterLevel: sensorData.lvlData.valor,
+        flowRate: sensorData.flwData.valor,
+        lastFetched: now(),
+        lastUpdated: parsedDate,
+      };
+      appState.errorCount = 0;
+
+      const alerts = await checkAllUserAlerts(
+        sensorData.lvlData.valor,
+        sensorData.flwData.valor
+      );
+
+      if (alerts.length) {
+        await processAlertResults(alerts);
+      }
+
+      success = true;
+    } catch (err) {
+      logger.error({ err }, "Unexpected error in updateWaterData");
+      appState.errorCount++;
+    } finally {
+      await updateServiceAvailability();
+
+      if (success) {
+        logger.info(
+          {
+            waterLevel: appState.currentWaterData?.waterLevel,
+            flowRate: appState.currentWaterData?.flowRate,
+            lastFetched: appState.currentWaterData?.lastFetched,
+            lastUpdated: appState.currentWaterData?.lastUpdated,
+            errorCount: appState.errorCount,
+            isUnavailable: appState.isUnavailable,
+          },
+          "Water data updated successfully"
+        );
+      }
+    }
+  });
+}
+
 updateWaterData();
 
-// schedule the update on every full 5 minutes of the hour
+// every 5 minutes (every 0:05, 0:10, etc)
 cron.schedule("*/5 * * * *", () => {
-  updateWaterData().catch((err) => console.error("Cron job failed:", err));
+  updateWaterData().catch((err) => logger.error({ err }, "Cron job failed"));
 });

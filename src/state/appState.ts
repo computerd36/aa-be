@@ -19,23 +19,15 @@ export interface WaterData {
   lastFetched: Date; // Date object that tells when the data was captured initially in the sensor
   lastUpdated: Date; // Date object that tells when the data was last updated from the API
 }
-export interface User {
-  chatId: string;
-  name: string;
-  alertLevel: number;
-  language: string;
-}
 
 interface AppState {
   currentWaterData: WaterData | null;
   errorCount: number;
-  isFetching: boolean;
   isUnavailable: boolean;
 }
 
 export const appState: AppState = {
   currentWaterData: null,
   errorCount: 0,
-  isFetching: false,
   isUnavailable: false,
 };

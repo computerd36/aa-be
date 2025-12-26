@@ -3,7 +3,7 @@ export const DEFAULT_LANGUAGE = "en";
 export const SUPPORTED_LANGUAGES = ["en", "es", "ca"];
 
 // alarm constants
-export const DELTA_PERCENTAGE = 0.05; // 5% delta for escalation
+export const DELTA_PERCENTAGE = 5; // 5% delta for escalation
 export const CLEAR_THRESHOLD_COUNT = 48; // 48 real new measurements to clear the alarm (one measurement every 15 minutes = 12 hours)
 export const ERROR_THRESHOLD = 12; // number of errors before we start warning users
 export const AGE_THRESHOLD = 3_600_000; // 1 hour in ms, used to check if the data is fresh enough, if not we warn users
@@ -28,6 +28,9 @@ export const SENSORS = [
     metric: "flowrate",
   },
 ];
+
+export const SENSOR_URL =
+  "https://saihebro.com/tiempo-real/estacion-aforos-A153-algas-horta-sjuan";
 
 // timezone constants
 export const APP_TIMEZONE = "Europe/Madrid";

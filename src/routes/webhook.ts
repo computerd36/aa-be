@@ -2,6 +2,7 @@ import multer from "multer";
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { createUser, deleteUser } from "../services/userService";
+import { logger } from "../logger";
 
 const webhookRouter = Router();
 
@@ -40,9 +41,9 @@ webhookRouter.post(
   async (req: Request, res: Response) => {
     try {
       // Debug
-      console.log("Raw req.body:", req.body);
-      console.log("req.body.json:", req.body.json);
-      console.log("Content-Type:", req.headers["content-type"]);
+      logger.info({ body: req.body }, "Raw req.body");
+      logger.info({ json: req.body.json }, "req.body.json");
+      logger.info({ contentType: req.headers["content-type"] }, "Content-Type");
 
       let body;
 
@@ -50,23 +51,22 @@ webhookRouter.post(
       if (req.body.json) {
         try {
           body = JSON.parse(req.body.json);
-          console.log("Parsed JSON from multipart field:", body);
+          logger.info({ parsedBody: body }, "Parsed JSON from multipart field");
         } catch (parseError) {
-          console.error(
-            "Failed to parse JSON from multipart field:",
-            parseError
+          logger.error(
+            { err: parseError, rawJson: req.body.json },
+            "Failed to parse JSON from multipart field"
           );
-          console.log("Raw json field content:", req.body.json);
           res.sendStatus(400);
           return;
         }
       } else {
         // Fallback to direct body
         body = req.body;
-        console.log("Using direct body:", body);
+        logger.info({ body }, "Using direct body");
       }
 
-      console.log("Final processed payload:", JSON.stringify(body, null, 2));
+      logger.info({ payload: body }, "Final processed payload");
 
       // Handle device actions
       const deviceActionResult = DeviceActionSchema.safeParse(body);
@@ -78,9 +78,9 @@ webhookRouter.post(
             // check if user already exists, if so delete old one
             try {
               await deleteUser(data.id);
-              console.log(`Existing user with ID ${data.id} deleted`);
+              logger.info(`Existing user with ID ${data.id} deleted`);
             } catch (error) {
-              console.log(
+              logger.info(
                 `No existing user found with ID ${data.id}, proceeding with creation`
               );
             }
@@ -91,14 +91,14 @@ webhookRouter.post(
               group: data.group,
               guest: data.guest,
             });
-            console.log("User created successfully");
+            logger.info("User created successfully");
             break;
           case "delete-device":
             await deleteUser(data.id);
-            console.log("User deleted successfully");
+            logger.info("User deleted successfully");
             break;
           default:
-            console.warn(`Unhandled action: ${data.action} for ID ${data.id}`);
+            logger.warn({ action: data.action, id: data.id }, "Unhandled action");
             break;
         }
 
@@ -110,7 +110,7 @@ webhookRouter.post(
       const messageResult = MessageTransmissionSchema.safeParse(body);
       if (messageResult.success) {
         const data = messageResult.data;
-        console.log(
+        logger.info(
           `Message transmission confirmed: ${data.success}, Available: ${data.available}`
         );
         res.sendStatus(204);
@@ -118,10 +118,10 @@ webhookRouter.post(
       }
 
       // Log unhandled webhook types for debugging
-      console.log("Unhandled webhook payload:", JSON.stringify(body, null, 2));
+      logger.info({ payload: body }, "Unhandled webhook payload");
       res.sendStatus(204);
     } catch (err) {
-      console.error("Webhook error", err);
+      logger.error({ err }, "Webhook error");
       res.sendStatus(500);
     }
   }

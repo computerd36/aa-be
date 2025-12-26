@@ -1,8 +1,9 @@
 import { getMessage } from "~/constants/messages";
 import { prismaClient } from "../../prisma/prismaClient";
 import { parseDeviceName } from "../utils/devicename";
-import { sendNotification } from "./notificationService";
-import { User } from "@prisma/client";
+import { sendNotificationAsync } from "./notificationService";
+import { MessageType, User } from "@prisma/client";
+import { logger } from "~/logger";
 
 /**
  * Creates a new user in the database based on the provided device data.
@@ -22,7 +23,6 @@ export async function createUser(deviceData: {
   group?: string;
   guest?: string;
 }): Promise<User> {
-  const deviceId = Number(deviceData.id);
   const deviceName = deviceData.name;
   const parsed = parseDeviceName(deviceName);
 
@@ -32,7 +32,7 @@ export async function createUser(deviceData: {
 
   const user = await prismaClient.user.create({
     data: {
-      deviceId,
+      deviceId: deviceData.id,
       name: parsed.name,
       language: parsed.language,
       value: parsed.value / 100, // convert to m value (e.g., 75 cm -> 0.75 m)
@@ -40,36 +40,34 @@ export async function createUser(deviceData: {
     },
   });
 
-  console.log(`User created: ${user.name} (Device ID: ${deviceId})`);
+  logger.info(`User created: ${user.name} (Device ID: ${deviceData.id})`);
 
   // send test notification to the user
 
   const welcomeMessage = getMessage(user.language, "welcome");
 
-  sendNotification(
-    "welcome",
-    welcomeMessage.title,
-    welcomeMessage.body(
+  sendNotificationAsync({
+    type: "welcome" as MessageType,
+    title: welcomeMessage.title,
+    message: welcomeMessage.body(
       user.name,
       user.deviceId,
       user.language,
       user.value.toString(),
       user.metric as "level" | "flowrate"
     ),
-    user.deviceId.toString(),
-    user.id.toString(),
-    false
-  );
+    deviceId: user.deviceId.toString(),
+    userId: user.id.toString(),
+    isCritical: false,
+  });
 
   return user;
 }
 
 export async function deleteUser(deviceId: string): Promise<void> {
-  const numericDeviceId = Number(deviceId);
-
   await prismaClient.user.delete({
-    where: { deviceId: numericDeviceId },
+    where: { deviceId: deviceId },
   });
 
-  console.log(`User with device ID ${numericDeviceId} deleted successfully.`);
+  logger.info(`User with device ID ${deviceId} deleted successfully.`);
 }

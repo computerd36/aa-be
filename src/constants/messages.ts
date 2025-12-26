@@ -3,7 +3,7 @@ export interface MessageTemplates {
     title: string;
     body: (
       name: string,
-      deviceId: number,
+      deviceId: string,
       language: string,
       value: string,
       metric: "level" | "flowrate"
@@ -20,14 +20,17 @@ export interface MessageTemplates {
   initialAlarm: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
+    urlTitle?: string;
   };
   escalationAlarm: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
+    urlTitle?: string;
   };
   normal: {
     title: string;
     body: (alertType: "flowrate" | "level", currentValue: number) => string;
+    urlTitle?: string;
   };
 }
 
@@ -54,6 +57,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `Critical water flow rate detected! Current flow rate: ${currentValue}. Please check your water system immediately.`
           : `Critical water level detected! Current level: ${currentValue}. Please check your water system immediately.`,
+      urlTitle: "View Sensor Data",
     },
     escalationAlarm: {
       title: "FLOOD WARNING! - IMMEDIATE ACTION REQUIRED",
@@ -61,6 +65,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `Critical water flow rate detected! Current flow rate: ${currentValue}. Please check your water system immediately.`
           : `Critical water level detected! Current level: ${currentValue}. Please check your water system immediately.`,
+      urlTitle: "View Sensor Data",
     },
     normal: {
       title: "FLOOD WARNING CLEARED",
@@ -68,6 +73,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `Water flow rate is back to normal. Current flow rate: ${currentValue}.`
           : `Water level is back to normal. Current level: ${currentValue}.`,
+      urlTitle: "View Sensor Data",
     },
   },
   es: {
@@ -92,6 +98,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `¡Se ha detectado un flujo de agua crítico! Flujo actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`
           : `¡Se ha detectado un nivel de agua crítico! Nivel actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`,
+      urlTitle: "Ver datos del sensor",
     },
     escalationAlarm: {
       title: "¡ALERTA DE INUNDACIÓN! - SE REQUIERE ACCIÓN INMEDIATA",
@@ -99,6 +106,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `¡Se ha detectado un flujo de agua crítico! Flujo actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`
           : `¡Se ha detectado un nivel de agua crítico! Nivel actual: ${currentValue}. Por favor, verifica tu sistema de agua inmediatamente.`,
+      urlTitle: "Ver datos del sensor",
     },
     normal: {
       title: "ALERTA DE INUNDACIÓN DESACTIVADA",
@@ -106,6 +114,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `El flujo de agua ha vuelto a la normalidad. Flujo actual: ${currentValue}.`
           : `El nivel de agua ha vuelto a la normalidad. Nivel actual: ${currentValue}.`,
+      urlTitle: "Ver datos del sensor",
     },
   },
   ca: {
@@ -130,6 +139,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `S'ha detectat un flux d'aigua crític! Flux actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`
           : `S'ha detectat un nivell d'aigua crític! Nivell actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`,
+      urlTitle: "Veure dades del sensor",
     },
     escalationAlarm: {
       title: "ALERTA D'INUNDACIÓ! - ACCIÓ IMMEDIATA REQUERIDA",
@@ -137,6 +147,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `S'ha detectat un flux d'aigua crític! Flux actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`
           : `S'ha detectat un nivell d'aigua crític! Nivell actual: ${currentValue}. Si us plau, comprova el teu sistema d'aigua immediatament.`,
+      urlTitle: "Veure dades del sensor",
     },
     normal: {
       title: "ALERTA D'INUNDACIÓ DESACTIVADA",
@@ -144,6 +155,7 @@ const messages: Record<string, MessageTemplates> = {
         alertType === "flowrate"
           ? `El flux d'aigua ha tornat a la normalitat. Flux actual: ${currentValue}.`
           : `El nivell d'aigua ha tornat a la normalitat. Nivell actual: ${currentValue}.`,
+      urlTitle: "Veure dades del sensor",
     },
   },
 };
