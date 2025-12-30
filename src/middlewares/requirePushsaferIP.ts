@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { PUSHSAFER_API_HOSTS } from "~/constants/constants";
-import { logger } from "~/logger";
+import { PUSHSAFER_API_HOSTS } from "../constants/constants";
+import { logger } from "../logger";
 
 export const requirePushsaferIP = (
   req: Request,

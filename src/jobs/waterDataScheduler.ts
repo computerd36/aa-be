@@ -2,21 +2,21 @@ import cron from "node-cron";
 import { Mutex } from "async-mutex";
 import { fetchWaterData } from "../services/waterDataService";
 import { appState, SaihEbroSensorData } from "../state/appState";
-import { parseSaihDateTime, now, nowTimestamp } from "~/utils/time";
-import { logger } from "~/logger";
+import { parseSaihDateTime, now, nowTimestamp } from "../utils/time";
+import { logger } from "../logger";
 import {
   ERROR_THRESHOLD,
   SENSORS,
   AGE_THRESHOLD,
   INITIAL_BACKOFF_MS,
   MAX_FETCH_RETRIES,
-} from "~/constants/constants";
+} from "../constants/constants";
 import {
   checkAllUserAlerts,
   processAlertResults,
   warnAllUsersServiceAvailable,
   warnAllUsersServiceUnavailable,
-} from "~/services/alarmService";
+} from "../services/alarmService";
 
 const fetchMutex = new Mutex();
 
@@ -27,7 +27,7 @@ type MetricMap = Record<"level" | "flowrate", string>;
  *
  * @returns {MetricMap} An object mapping "level" and "flowrate" to their sensor IDs.
  */
-function buildMetricMap(): MetricMap {
+export function buildMetricMap(): MetricMap {
   return SENSORS.reduce<MetricMap>(
     (acc, { metric, id }) => {
       if (metric === "level" || metric === "flowrate") {
@@ -47,7 +47,7 @@ function buildMetricMap(): MetricMap {
  * @returns {Promise<SaihEbroSensorData[] | null>} - A promise that resolves to an array of SaihEbroSensorData objects
  * if the fetch is successful, or null if all retry attempts fail.
  */
-async function fetchWithRetry(
+export async function fetchWithRetry(
   senalParam: string
 ): Promise<SaihEbroSensorData[] | null> {
   let backoff = INITIAL_BACKOFF_MS;
@@ -78,7 +78,7 @@ async function fetchWithRetry(
  * @param {MetricMap} metricMap - The mapping of metric types to sensor IDs.
  * @returns {{ lvlData: SaihEbroSensorData; flwData: SaihEbroSensorData } | null} - An object containing the level and flowrate data if valid, or null if validation fails.
  */
-function validateSensorData(
+export function validateSensorData(
   data: SaihEbroSensorData[],
   metricMap: MetricMap
 ): { lvlData: SaihEbroSensorData; flwData: SaihEbroSensorData } | null {
@@ -104,7 +104,7 @@ function validateSensorData(
  * @param {string} fecha - The 'fecha' timestamp string from the sensor data.
  * @returns {Date | null} - A Date object if parsing is successful, or null if parsing fails.
  */
-function parseTimestamp(fecha: string): Date | null {
+export function parseTimestamp(fecha: string): Date | null {
   const parsedDate = parseSaihDateTime(fecha);
 
   if (!(parsedDate instanceof Date) || Number.isNaN(parsedDate.getTime())) {
@@ -120,7 +120,7 @@ function parseTimestamp(fecha: string): Date | null {
  *
  * @returns {boolean} - True if the data is stale, false otherwise.
  */
-function isDataStale(): boolean {
+export function isDataStale(): boolean {
   const { currentWaterData } = appState;
   if (!currentWaterData) return true;
 
@@ -133,7 +133,7 @@ function isDataStale(): boolean {
  *
  * @returns {Promise<void>} - A promise that resolves when the update is complete.
  */
-async function updateServiceAvailability(): Promise<void> {
+export async function updateServiceAvailability(): Promise<void> {
   const shouldBeUnavailable =
     appState.errorCount >= ERROR_THRESHOLD || isDataStale();
 
@@ -159,7 +159,7 @@ async function updateServiceAvailability(): Promise<void> {
  *
  * @returns {Promise<void>} - A promise that resolves when the update process is complete.
  */
-async function updateWaterData(): Promise<void> {
+export async function updateWaterData(): Promise<void> {
   if (fetchMutex.isLocked()) {
     logger.info("Previous fetch still in progress, skipping");
     return;
