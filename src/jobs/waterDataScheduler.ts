@@ -22,6 +22,11 @@ const fetchMutex = new Mutex();
 
 type MetricMap = Record<"level" | "flowrate", string>;
 
+/**
+ * Builds a mapping of metric types to their corresponding sensor IDs.
+ *
+ * @returns {MetricMap} An object mapping "level" and "flowrate" to their sensor IDs.
+ */
 function buildMetricMap(): MetricMap {
   return SENSORS.reduce<MetricMap>(
     (acc, { metric, id }) => {
@@ -34,6 +39,14 @@ function buildMetricMap(): MetricMap {
   );
 }
 
+/**
+ * Fetches water data with retry logic and exponential backoff.
+ *
+ * @param {string} senalParam - The signal identifier parameter for fetching water data.
+ *
+ * @returns {Promise<SaihEbroSensorData[] | null>} - A promise that resolves to an array of SaihEbroSensorData objects
+ * if the fetch is successful, or null if all retry attempts fail.
+ */
 async function fetchWithRetry(
   senalParam: string
 ): Promise<SaihEbroSensorData[] | null> {
@@ -58,6 +71,13 @@ async function fetchWithRetry(
   return null;
 }
 
+/**
+ * Validates the fetched sensor data to ensure required metrics are present and valid.
+ *
+ * @param {SaihEbroSensorData[]} data - The array of fetched sensor data.
+ * @param {MetricMap} metricMap - The mapping of metric types to sensor IDs.
+ * @returns {{ lvlData: SaihEbroSensorData; flwData: SaihEbroSensorData } | null} - An object containing the level and flowrate data if valid, or null if validation fails.
+ */
 function validateSensorData(
   data: SaihEbroSensorData[],
   metricMap: MetricMap
@@ -78,6 +98,12 @@ function validateSensorData(
   return { lvlData, flwData };
 }
 
+/**
+ * Parses the 'fecha' timestamp from the sensor data into a Date object.
+ *
+ * @param {string} fecha - The 'fecha' timestamp string from the sensor data.
+ * @returns {Date | null} - A Date object if parsing is successful, or null if parsing fails.
+ */
 function parseTimestamp(fecha: string): Date | null {
   const parsedDate = parseSaihDateTime(fecha);
 
@@ -89,6 +115,11 @@ function parseTimestamp(fecha: string): Date | null {
   return parsedDate;
 }
 
+/**
+ * Determines if the current water data is stale based on the AGE_THRESHOLD.
+ *
+ * @returns {boolean} - True if the data is stale, false otherwise.
+ */
 function isDataStale(): boolean {
   const { currentWaterData } = appState;
   if (!currentWaterData) return true;
@@ -97,6 +128,11 @@ function isDataStale(): boolean {
   return currentWaterData.lastUpdated < staleCutoff;
 }
 
+/**
+ * Updates the service availability status and notifies users if there is a change.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the update is complete.
+ */
 async function updateServiceAvailability(): Promise<void> {
   const shouldBeUnavailable =
     appState.errorCount >= ERROR_THRESHOLD || isDataStale();
@@ -118,6 +154,11 @@ async function updateServiceAvailability(): Promise<void> {
   }
 }
 
+/**
+ * Fetches and updates water data, checks user alerts, and manages service availability.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the update process is complete.
+ */
 async function updateWaterData(): Promise<void> {
   if (fetchMutex.isLocked()) {
     logger.info("Previous fetch still in progress, skipping");

@@ -37,3 +37,4 @@ export const APP_TIMEZONE = "Europe/Madrid";
 
 // pushsafer constants
 export const PUSHSAFER_STATUS_FRESH_FOR = 45_000; // 45 seconds in ms
+export const PUSHSAFER_API_HOSTS = ["212.83.36.91", "2a00:f48:cafe:a911::1"]; // Pushsafer IP addresses

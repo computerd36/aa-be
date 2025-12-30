@@ -3,6 +3,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { createUser, deleteUser } from "../services/userService";
 import { logger } from "../logger";
+import { requirePushsaferIP } from "~/middlewares/requirePushsaferIP";
 
 const webhookRouter = Router();
 
@@ -38,6 +39,7 @@ export const PushSaferSchema = z.union([
 webhookRouter.post(
   "/pushsafer",
   upload.none(),
+  requirePushsaferIP,
   async (req: Request, res: Response) => {
     try {
       // Debug
@@ -98,7 +100,10 @@ webhookRouter.post(
             logger.info("User deleted successfully");
             break;
           default:
-            logger.warn({ action: data.action, id: data.id }, "Unhandled action");
+            logger.warn(
+              { action: data.action, id: data.id },
+              "Unhandled action"
+            );
             break;
         }
 

@@ -23,6 +23,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(rateLimiter);
 
+// set trust proxy for correct client IP retrieval (pushsafer allowed ips check)
+app.set("trust proxy", 1);
+
 // CORS setup
 configureCORS(app);
 

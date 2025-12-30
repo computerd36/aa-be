@@ -18,7 +18,7 @@ export async function fetchWaterData(
 
   const data = response.data;
   if (!Array.isArray(data)) {
-    throw new Error("Unexpected API response: not an array");
+    throw new TypeError("Unexpected API response: not an array");
   }
 
   for (const item of data) {
@@ -27,7 +27,7 @@ export async function fetchWaterData(
       typeof item.fecha !== "string" ||
       typeof item.valor !== "number"
     ) {
-      throw new Error(`Malformed sensor data: ${JSON.stringify(item)}`);
+      throw new TypeError(`Malformed sensor data: ${JSON.stringify(item)}`);
     }
   }
 

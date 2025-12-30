@@ -144,10 +144,17 @@ export async function processAlertResults(
   results: AlertCheckResult[]
 ): Promise<void> {
   for (const result of results) {
+    // skip if no state change
+    if (result.prevState === result.newState) {
+      continue;
+    }
+
+    // fet the user from db
     const user = await prismaClient.user.findUnique({
       where: { id: result.userId },
     });
 
+    // skip if user not found
     if (!user) {
       logger.warn({ userId: result.userId }, "User not found");
       continue;
@@ -156,6 +163,7 @@ export async function processAlertResults(
     // get message based on new state
     const message = getMessage(user.language, result.newState);
 
+    // send notification
     const success = await sendNotificationAsync({
       type: MessageType[result.newState as keyof typeof MessageType],
       title: message.title,
@@ -167,6 +175,7 @@ export async function processAlertResults(
       urlTitle: message.urlTitle,
     });
 
+    // if success, update user alarm state in db, else log error
     if (success) {
       await prismaClient.user.update({
         where: { id: user.id },
