@@ -31,6 +31,9 @@ const EnvSchema = z.object({
       /^[a-zA-Z0-9]{20}$/,
       "PUSHSAFER_PRIVATE_KEY must be exactly 20 alphanumeric characters"
     ),
+  PUSHSAFER_WEBHOOK_SECRET: z
+    .string()
+    .min(32, "PUSHSAFER_WEBHOOK_SECRET must be at least 32 characters"),
 });
 
 export const env = EnvSchema.parse(process.env);

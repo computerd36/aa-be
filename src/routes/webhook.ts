@@ -3,7 +3,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { createUser, deleteUser } from "../services/userService";
 import { logger } from "../logger";
-import { requirePushsaferIP } from "~/middlewares/requirePushsaferIP";
+import { requirePushsaferSecret } from "~/middlewares/requirePushsaferSecret";
 
 const webhookRouter = Router();
 
@@ -39,7 +39,7 @@ export const PushSaferSchema = z.union([
 webhookRouter.post(
   "/pushsafer",
   upload.none(),
-  requirePushsaferIP,
+  requirePushsaferSecret,
   async (req: Request, res: Response) => {
     try {
       // Debug
