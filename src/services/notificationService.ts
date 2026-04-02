@@ -45,6 +45,7 @@ export function sendNotificationAsync({
       s: isCritical ? 62 : 12,
       v: isCritical ? 3 : 1,
       i: isCritical ? 74 : 4,
+      pr: isCritical ? 2 : 0,
       d: deviceId,
       u: url,
       ut: urlTitle,
