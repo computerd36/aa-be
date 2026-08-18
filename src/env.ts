@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { z } from "zod";
+import { normalizeOrigin } from "./utils/cors";
 
 dotenv.config();
 
@@ -7,12 +8,12 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(3000),
   NODE_ENV: z.enum(["development", "production"]).default("development"),
 
-  // CORS_ORIGINS: "http://localhost:5173,https://aa-fe-dev.up.railway.app"
+  // CORS_ORIGINS: "http://localhost:5173,https://aa-fe-dev.up.railway.app,https://alertaigua.es/"
   CORS_ORIGINS: z
     .string()
-    .transform((str) => str.split(",").map((url) => url.trim()))
+    .transform((str) => str.split(",").map(normalizeOrigin))
     .pipe(
-      z.array(z.string().url()).min(1, "At least one CORS origin is required")
+      z.array(z.string().url()).min(1, "At least one CORS origin is required"),
     )
     .default("http://localhost:3000"),
 
@@ -29,7 +30,7 @@ const EnvSchema = z.object({
     .string()
     .regex(
       /^[a-zA-Z0-9]{20}$/,
-      "PUSHSAFER_PRIVATE_KEY must be exactly 20 alphanumeric characters"
+      "PUSHSAFER_PRIVATE_KEY must be exactly 20 alphanumeric characters",
     ),
   PUSHSAFER_WEBHOOK_SECRET: z
     .string()

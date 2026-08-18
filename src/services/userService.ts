@@ -12,7 +12,6 @@ import { logger } from "~/logger";
  * @param {string} deviceData.id - The ID of the device.
  * @param {string} deviceData.name - The name of the device.
  * @param {string} [deviceData.group] - Optional group for the user (e.g., "dev").
- * @param {string} [deviceData.guest] - Optional guest identifier.
  *
  * @returns {Promise<User>} A promise that resolves to the created User object.
  * @throws {Error} If the device name format is invalid or if user creation fails.
@@ -21,7 +20,6 @@ export async function createUser(deviceData: {
   id: string;
   name: string;
   group?: string;
-  guest?: string;
 }): Promise<User> {
   const deviceName = deviceData.name;
   const parsed = parseDeviceName(deviceName);

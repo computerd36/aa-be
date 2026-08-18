@@ -1,25 +1,42 @@
-import multer from "multer";
+import { Prisma } from "@prisma/client";
 import { Router, Request, Response } from "express";
+import multer from "multer";
 import { z } from "zod";
-import { createUser, deleteUser } from "../services/userService";
 import { logger } from "../logger";
-import { requirePushsaferSecret } from "~/middlewares/requirePushsaferSecret";
+import { requirePushsaferSecret } from "../middlewares/requirePushsaferSecret";
+import { createUser, deleteUser } from "../services/userService";
 
 const webhookRouter = Router();
 
-// Configure multer to handle multipart/form-data
+// Pushsafer posts its webhooks as multipart/form-data
 const upload = multer();
 
-// zod base schema for device actions
-const DeviceActionSchema = z.object({
-  action: z.enum(["add-device", "delete-device"]),
-  id: z.string().regex(/^\d+$/),
+const DeviceIdSchema = z.string().regex(/^\d+$/);
 
-  // only for add-device:
-  name: z.string().optional(),
+// zod schemas for device actions. `name` is only sent on add-device, and
+// createUser cannot work without it, so it is required there and absent here.
+const AddDeviceSchema = z.object({
+  action: z.literal("add-device"),
+  id: DeviceIdSchema,
+  name: z.string(),
   group: z.string().optional(),
-  guest: z.string().optional(),
 });
+
+const DeleteDeviceSchema = z.object({
+  action: z.literal("delete-device"),
+  id: DeviceIdSchema,
+});
+
+const DeviceActionSchema = z.discriminatedUnion("action", [
+  AddDeviceSchema,
+  DeleteDeviceSchema,
+]);
+
+type DeviceAction = z.infer<typeof DeviceActionSchema>;
+
+// any payload carrying an `action` field is meant to be a device action,
+// even when it fails the stricter validation above
+const DeviceActionShapeSchema = z.object({ action: z.string() });
 
 // zod schema for message transmission confirmation
 const MessageTransmissionSchema = z.object({
@@ -29,101 +46,110 @@ const MessageTransmissionSchema = z.object({
   message_ids: z.string(),
 });
 
-// union zod schema to handle all possible payloads
-export const PushSaferSchema = z.union([
-  DeviceActionSchema,
-  MessageTransmissionSchema,
-  z.object({}).passthrough(), // allow other fields for debugging
-]);
+/**
+ * Pushsafer sends the payload either as a `json` field inside the multipart
+ * form data or directly as the request body.
+ *
+ * @throws {SyntaxError} If the `json` field contains malformed JSON.
+ */
+function extractPayload(req: Request): unknown {
+  const rawJson = req.body?.json;
+
+  if (!rawJson || typeof rawJson !== "string") return req.body;
+
+  return JSON.parse(rawJson);
+}
+
+/** Prisma's "record to delete does not exist" error. */
+function isRecordNotFoundError(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025"
+  );
+}
+
+async function handleDeviceAction(data: DeviceAction): Promise<void> {
+  if (data.action === "delete-device") {
+    await deleteUser(data.id);
+    logger.info({ deviceId: data.id }, "User deleted successfully");
+    return;
+  }
+
+  // add-device: drop the user still registered for this device, if any.
+  // Anything other than "no such user" is a real failure and must bubble up.
+  try {
+    await deleteUser(data.id);
+    logger.info({ deviceId: data.id }, "Existing user deleted");
+  } catch (err) {
+    if (!isRecordNotFoundError(err)) throw err;
+
+    logger.info(
+      { deviceId: data.id },
+      "No existing user found, proceeding with creation"
+    );
+  }
+
+  await createUser({
+    id: data.id,
+    name: data.name,
+    group: data.group,
+  });
+  logger.info({ deviceId: data.id }, "User created successfully");
+}
 
 webhookRouter.post(
   "/pushsafer",
-  upload.none(),
   requirePushsaferSecret,
+  upload.none(),
   async (req: Request, res: Response) => {
+    let payload: unknown;
+
     try {
-      // Debug
-      logger.info({ body: req.body }, "Raw req.body");
-      logger.info({ json: req.body.json }, "req.body.json");
-      logger.info({ contentType: req.headers["content-type"] }, "Content-Type");
+      payload = extractPayload(req);
+    } catch (err) {
+      logger.error(
+        { err, rawJson: req.body?.json },
+        "Failed to parse JSON from multipart field"
+      );
+      res.sendStatus(400);
+      return;
+    }
 
-      let body;
+    logger.debug(
+      { payload, contentType: req.headers["content-type"] },
+      "Pushsafer webhook received"
+    );
 
-      // Check if we have a 'json' field in the multipart form data
-      if (req.body.json) {
-        try {
-          body = JSON.parse(req.body.json);
-          logger.info({ parsedBody: body }, "Parsed JSON from multipart field");
-        } catch (parseError) {
-          logger.error(
-            { err: parseError, rawJson: req.body.json },
-            "Failed to parse JSON from multipart field"
-          );
-          res.sendStatus(400);
-          return;
-        }
-      } else {
-        // Fallback to direct body
-        body = req.body;
-        logger.info({ body }, "Using direct body");
-      }
-
-      logger.info({ payload: body }, "Final processed payload");
-
+    try {
       // Handle device actions
-      const deviceActionResult = DeviceActionSchema.safeParse(body);
+      const deviceActionResult = DeviceActionSchema.safeParse(payload);
       if (deviceActionResult.success) {
-        const data = deviceActionResult.data;
-
-        switch (data.action) {
-          case "add-device":
-            // check if user already exists, if so delete old one
-            try {
-              await deleteUser(data.id);
-              logger.info(`Existing user with ID ${data.id} deleted`);
-            } catch (error) {
-              logger.info(
-                `No existing user found with ID ${data.id}, proceeding with creation`
-              );
-            }
-
-            await createUser({
-              id: data.id,
-              name: data.name,
-              group: data.group,
-              guest: data.guest,
-            });
-            logger.info("User created successfully");
-            break;
-          case "delete-device":
-            await deleteUser(data.id);
-            logger.info("User deleted successfully");
-            break;
-          default:
-            logger.warn(
-              { action: data.action, id: data.id },
-              "Unhandled action"
-            );
-            break;
-        }
-
+        await handleDeviceAction(deviceActionResult.data);
         res.sendStatus(204);
         return;
       }
 
-      // Handle message transmission confirmations
-      const messageResult = MessageTransmissionSchema.safeParse(body);
-      if (messageResult.success) {
-        const data = messageResult.data;
-        logger.info(
-          `Message transmission confirmed: ${data.success}, Available: ${data.available}`
+      // A device action that does not validate (e.g. add-device without a
+      // name) cannot be processed and will not succeed on a retry either.
+      if (DeviceActionShapeSchema.safeParse(payload).success) {
+        logger.warn(
+          { payload, issues: deviceActionResult.error.issues },
+          "Invalid device action payload"
         );
+        res.sendStatus(400);
+        return;
+      }
+
+      // Handle message transmission confirmations
+      const messageResult = MessageTransmissionSchema.safeParse(payload);
+      if (messageResult.success) {
+        const { success, available } = messageResult.data;
+        logger.info({ success, available }, "Message transmission confirmed");
         res.sendStatus(204);
         return;
       }
 
       // Log unhandled webhook types for debugging
-      logger.info({ payload: body }, "Unhandled webhook payload");
+      logger.info({ payload }, "Unhandled webhook payload");
       res.sendStatus(204);
     } catch (err) {
       logger.error({ err }, "Webhook error");
