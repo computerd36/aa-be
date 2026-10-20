@@ -1,74 +1,81 @@
-# AlertAigua 🌊 – Flood-Alert Backend
+# AlertAigua Backend
 
-![](../../actions/workflows/ci.yml/badge.svg)
+![CI](../../actions/workflows/ci.yml/badge.svg)
 
-Backend service for the local flood-warning system in **Arens de Lledó**.  
-It pulls water-level data from the **SAIH Ebro API**, checks user-defined thresholds and sends high-priority push alerts through **Pushsafer**.
+Backend for the flood-warning service in Arens de Lledó. Every five minutes it fetches water level and flow rate from the [SAIH Ebro](https://www.saihebro.com) open-data API and compares them with each user's threshold. When a threshold is crossed, it sends a high-priority push notification through [Pushsafer](https://www.pushsafer.com).
 
----
+## How it works
 
-## Tech Stack
+- **Polling** (`src/jobs/waterDataScheduler.ts`): a cron job fetches sensor data. Failed requests are retried with exponential backoff. If the API stays unreachable or the data gets too old, users get a "service unavailable" notice, and a follow-up once the data is back.
+- **Alarms** (`src/services/alarmService.ts`): each user has an alarm state, which is `normal`, `initialAlarm` or `escalationAlarm`. Crossing the threshold triggers the initial alarm. A further rise of 5% escalates it. The alarm clears after 48 consecutive measurements below the threshold (about 12 hours).
+- **Registration** (`POST /webhook/pushsafer`): users sign up by adding a device in Pushsafer. Pushsafer then calls this webhook, which creates or deletes the matching user. Requests must include `?secret=<PUSHSAFER_WEBHOOK_SECRET>`.
+- **Status** (`GET /status`): returns the latest readings and service health for the frontend.
 
-| Layer               | Tooling / Runtime                       | Rationale                              |
-| ------------------- | --------------------------------------- | -------------------------------------- |
-| Runtime & Language  | **Node.js 18+**, **TypeScript**         | Async I/O, type safety                 |
-| Build & Reload      | **esbuild**                             | Fast bundling/transpiling              |
-| Web Framework       | **Express**                             | Minimal, unopinionated                 |
-| Lint & Format       | **Biome**                               | Fast linting & auto-fix                |
-| Tests               | **Vitest**                              | Unit & API tests                       |
-| Coverage            | **Istanbul**                            | Quality gate                           |
-| Database            | **PostgreSQL**                          | Efficient queries                      |
-| CI/CD               | **GitHub Actions**                      | Lint · Test · Build · Coverage         |
-| Deployment          | **Railway** (Docker)                    | Auto-scaling, low ops overhead         |
+Messages are available in English, Spanish and Catalan (`src/constants/messages.ts`).
 
----
+## Tech stack
 
-## Prerequisites
+- Node.js 24, TypeScript, Express
+- PostgreSQL with Prisma 7 (`@prisma/adapter-pg`)
+- esbuild for bundling
+- Vitest with Istanbul coverage
+- Biome for linting and formatting
+- zod for env and payload validation
+- Deployed on Railway, with CI on GitHub Actions
 
-- [pnpm](https://pnpm.io/installation) ≥ 7.27  
-  *(Installs the correct Node.js version automatically.)*
+## Getting started
 
----
-
-## Quick Start
+Prerequisites: [pnpm](https://pnpm.io/installation) 9 or newer, and a PostgreSQL database. `.npmrc` pins the Node version, and pnpm installs it automatically.
 
 ```bash
-# 1 Clone repository
-git clone https://github.com/<user>/AlertAigua.git
-cd AlertAigua
+git clone https://github.com/computerd36/aa-be.git
+cd aa-be
+pnpm install
+cp .env.template .env      # then fill in the values
+pnpm prisma generate       # generate the Prisma client (not done on install)
+pnpm prisma db push        # create the tables in your database
+pnpm dev
+```
 
-# 2 Install dependencies
-pnpm i
-````
+`pnpm prisma generate` must be re-run whenever `prisma/schema.prisma` changes. If you skip it, imports like `AlarmState` from `@prisma/client` will not resolve.
 
 ### Environment variables
-  1. Duplicate the file **`.env.template`** and rename the copy to **`.env.local`** in the project root.
-  2. Fill in every variable - leaving any placeholder blank will prevent the server from booting. All values are validated at runtime with **zod**, so typos are caught early.
-  3. For the required **SAIH_EBRO_API_KEY**, first [create a SAIH Ebro account](https://www.saihebro.com/usuarios/registro), then request an API key via one of the contact channels listed [here](https://www.saihebro.com/contacto/direcciones).
 
----
+All variables are validated at startup in `src/env.ts`, and the server exits if any are missing or invalid.
+
+| Variable                   | Required | Description                                                       |
+| -------------------------- | -------- | ----------------------------------------------------------------- |
+| `PORT`                     | no       | HTTP port, default `3000`                                         |
+| `NODE_ENV`                 | no       | `development` (default) or `production`                           |
+| `CORS_ORIGINS`             | no       | Comma-separated list of allowed frontend origins                  |
+| `SAIHEBRO_API_BASE_URL`    | yes      | SAIH Ebro open-data API base URL                                  |
+| `SAIHEBRO_BASE_PORT`       | no       | Default `443`                                                     |
+| `SAIHEBRO_API_KEY`         | yes      | SAIH Ebro API key (see below)                                     |
+| `DATABASE_URL`             | yes      | PostgreSQL connection string                                      |
+| `PUSHSAFER_PRIVATE_KEY`    | yes      | 20-character Pushsafer private key                                |
+| `PUSHSAFER_WEBHOOK_SECRET` | yes      | At least 32 characters; must match the `secret` query parameter on the webhook URL |
+
+To get a SAIH Ebro API key, [create an account](https://www.saihebro.com/usuarios/registro), then request a key through one of the [contact channels](https://www.saihebro.com/contacto/direcciones).
 
 ## Scripts
 
-| Command         | Purpose                             |
-| --------------- | ----------------------------------- |
-| `pnpm dev`      | Start in dev mode with live reload  |
-| `pnpm test`     | Run full test suite                 |
-| `pnpm coverage` | Run tests **with coverage report**  |
-| `pnpm build`    | Create production bundle            |
-| `pnpm start`    | Launch built bundle (after `build`) |
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `pnpm dev`      | Build in watch mode and run with live reload         |
+| `pnpm test`     | Run the test suite                                   |
+| `pnpm coverage` | Run the tests with a coverage report                 |
+| `pnpm build`    | Create the production bundle in `dist/`              |
+| `pnpm start`    | Apply migrations, generate the client, start `dist/` |
 
----
+## Deployment
 
-## Deploying on Railway 🚂
+The service runs on Railway:
 
-1. Create a new Railway project.
-2. Link this repository.
-3. Add secrets from the .env.template file to the deployed version
-4. Hit **Deploy** – Railway builds the Docker image and scales automatically.
-
----
+1. Create a Railway project and link this repository.
+2. Add a PostgreSQL database and set the environment variables listed above.
+3. Railway runs `pnpm build` followed by `pnpm start` on every push to `main`.
+4. In Pushsafer, point the device webhook to `https://<your-domain>/webhook/pushsafer?secret=<PUSHSAFER_WEBHOOK_SECRET>`.
 
 ## License
 
-MIT – see [`LICENSE`](LICENSE).
+MIT
